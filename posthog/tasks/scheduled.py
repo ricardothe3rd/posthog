@@ -585,3 +585,24 @@ def setup_periodic_tasks(sender: Celery, **kwargs: Any) -> None:
         cleanup_expired_test_saved_queries.s(),
         name="cleanup expired test saved queries",
     )
+
+    # Delete expired Streamlit bridge OAuth tokens.
+    # Hourly because tokens have a 1-hour TTL and every connect_info call mints
+    # a fresh one — daily cleanup left up to 24h of dead rows in the table.
+    from products.streamlit_apps.backend.tasks import (
+        cleanup_deleted_streamlit_app_zips,
+        cleanup_expired_streamlit_oauth_tokens,
+    )
+
+    sender.add_periodic_task(
+        crontab(hour="*", minute="55"),
+        cleanup_expired_streamlit_oauth_tokens.s(),
+        name="cleanup expired streamlit oauth tokens",
+    )
+
+    # Hard-delete S3 zips for Streamlit apps past their soft-delete retention.
+    sender.add_periodic_task(
+        crontab(hour="4", minute="10"),
+        cleanup_deleted_streamlit_app_zips.s(),
+        name="cleanup deleted streamlit app zips",
+    )
