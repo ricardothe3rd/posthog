@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import get_args
 
 import pytest
 
@@ -11,6 +12,16 @@ from posthog.temporal.data_imports.signals.zendesk_tickets import zendesk_ticket
 
 FIXTURES_DIR = Path(__file__).resolve().parents[5] / "products" / "signals" / "eval" / "fixtures"
 
+# Build a lookup from (source_product, source_type) -> variant class name
+# so we can supply the discriminator tag when validating.
+_VARIANT_CLASS_NAME_LOOKUP: dict[tuple[str, str], str] = {}
+for _variant_type in get_args(SignalInput.model_fields["root"].annotation):
+    _fields = _variant_type.model_fields
+    _sp = _fields["source_product"].default
+    _st = _fields["source_type"].default
+    if _sp and _st:
+        _VARIANT_CLASS_NAME_LOOKUP[(_sp, _st)] = _variant_type.__name__
+
 
 def _load_fixture(filename: str) -> list[dict]:
     with open(FIXTURES_DIR / filename) as f:
@@ -18,6 +29,7 @@ def _load_fixture(filename: str) -> list[dict]:
 
 
 def _validate_output(output):
+    class_name = _VARIANT_CLASS_NAME_LOOKUP[(output.source_product, output.source_type)]
     SignalInput.model_validate(
         {
             "source_product": output.source_product,
@@ -26,6 +38,7 @@ def _validate_output(output):
             "description": output.description,
             "weight": output.weight,
             "extra": output.extra,
+            "source_product, source_type": class_name,
         }
     )
 
