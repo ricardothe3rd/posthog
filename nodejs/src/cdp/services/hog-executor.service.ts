@@ -8,7 +8,8 @@ import { ACCESS_TOKEN_PLACEHOLDER } from '~/config/constants'
 import { FetchOptions, FetchResponse, InvalidRequestError, SecureRequestError, fetch } from '~/utils/request'
 import { tryCatch } from '~/utils/try-catch'
 
-import { PluginsServerConfig } from '../../types'
+import { buildIntegerMatcherWithPercentage } from '../../config/config'
+import { PluginsServerConfig, ValueMatcher } from '../../types'
 import { parseJSON } from '../../utils/json-parse'
 import { logger } from '../../utils/logger'
 import { TeamManager } from '../../utils/team-manager'
@@ -16,6 +17,7 @@ import { UUIDT } from '../../utils/utils'
 import { getAsyncFunctionHandler, getRegisteredAsyncFunctionNames } from '../async-function-registry'
 import '../async-functions'
 import {
+    CyclotronJobInvocation,
     CyclotronJobInvocationHogFunction,
     CyclotronJobInvocationResult,
     HogFunctionFilterGlobals,
@@ -46,6 +48,7 @@ export interface HogExecutorConfig {
     fetchRetries: number
     fetchBackoffBaseMs: number
     fetchBackoffMaxMs: number
+    emailQueueRouting: string
 }
 
 export interface HogExecutorAsyncContext {
@@ -179,13 +182,17 @@ export type HogExecutorExecuteAsyncOptions = HogExecutorExecuteOptions & {
 }
 
 export class HogExecutorService {
+    private emailQueueMatcher: ValueMatcher<number>
+
     constructor(
         private config: HogExecutorConfig,
         private asyncContext: HogExecutorAsyncContext,
         private hogInputsService: HogInputsService,
         private emailService: EmailService,
         private recipientTokensService: RecipientTokensService
-    ) {}
+    ) {
+        this.emailQueueMatcher = buildIntegerMatcherWithPercentage(config.emailQueueRouting)
+    }
 
     async buildInputsWithGlobals(
         hogFunction: HogFunctionType,
@@ -341,7 +348,11 @@ export class HogExecutorService {
                 if (queueParamsType === 'fetch') {
                     result = await this.executeFetch(nextInvocation, options)
                 } else if (queueParamsType === 'email') {
-                    result = await this.emailService.executeSendEmail(nextInvocation)
+                    if (this.emailQueueMatcher(nextInvocation.teamId)) {
+                        result = this.routeEmailToQueue(nextInvocation)
+                    } else {
+                        result = await this.emailService.executeSendEmail(nextInvocation)
+                    }
                 } else {
                     throw new Error(`Unknown queue type: ${queueParamsType}`)
                 }
@@ -371,6 +382,61 @@ export class HogExecutorService {
 
         result.logs = logs
         result.metrics = metrics
+
+        return result
+    }
+
+    /**
+     * Routes an email send to the dedicated email queue instead of sending inline.
+     * The email worker will pick this up and send via SES.
+     * Returns { success: true } to the VM stack optimistically (email is queued, not sent yet).
+     */
+    private routeEmailToQueue(
+        invocation: CyclotronJobInvocationHogFunction
+    ): CyclotronJobInvocationResult<CyclotronJobInvocationHogFunction> {
+        const emailInvocation: CyclotronJobInvocation = {
+            id: new UUIDT().toString(),
+            teamId: invocation.teamId,
+            functionId: invocation.functionId,
+            parentRunId: invocation.parentRunId,
+            queue: 'email',
+            queuePriority: invocation.queuePriority,
+            queueParameters: invocation.queueParameters,
+            state: {
+                // Minimal state — just what EmailService needs for tracking and unsubscribe headers
+                globals: invocation.state.globals,
+                vmState: null,
+                timings: [],
+                attempts: 0,
+                actionId: invocation.state.actionId,
+            },
+        }
+
+        // Store message_category_type in queueMetadata so the email worker can determine
+        // whether to add unsubscribe headers without loading the full hog function
+        if (invocation.hogFunction?.metadata?.message_category_type) {
+            emailInvocation.queueMetadata = {
+                messageCategoryType: invocation.hogFunction.metadata.message_category_type,
+            }
+        }
+
+        const result = createInvocationResult<CyclotronJobInvocationHogFunction>(invocation, {}, { finished: false })
+
+        // Push success to VM stack — "queued successfully"
+        result.invocation.state.vmState!.stack.push({ success: true })
+
+        // Track the email as queued
+        result.metrics.push({
+            team_id: invocation.teamId,
+            app_source_id: invocation.parentRunId ?? invocation.functionId,
+            instance_id: invocation.state.actionId || invocation.id,
+            metric_kind: 'email',
+            metric_name: 'email_queued',
+            count: 1,
+        })
+
+        // Attach the new email invocation to be created as a side effect
+        result.enqueuedInvocations = [emailInvocation]
 
         return result
     }

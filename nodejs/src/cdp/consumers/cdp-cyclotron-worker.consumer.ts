@@ -163,7 +163,13 @@ export class CdpCyclotronWorker<
 
     @instrumented({ key: 'cdpConsumer.backgroundTask.queueInvocationResults', timeoutMs: 15_000, sendException: false })
     protected async queueInvocationResults(invocations: CyclotronJobInvocationResult[]) {
-        await this.cyclotronJobQueue.queueInvocationResults(invocations)
+        const enqueuedInvocations = invocations.flatMap((r) => r.enqueuedInvocations ?? [])
+        await Promise.all([
+            this.cyclotronJobQueue.queueInvocationResults(invocations),
+            enqueuedInvocations.length > 0
+                ? this.cyclotronJobQueue.queueInvocations(enqueuedInvocations)
+                : Promise.resolve(),
+        ])
     }
 
     public async start() {
