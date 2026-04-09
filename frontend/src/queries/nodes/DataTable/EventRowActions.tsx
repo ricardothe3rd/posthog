@@ -9,6 +9,7 @@ import { More } from 'lib/lemon-ui/LemonButton/More'
 import { copyToClipboard } from 'lib/utils/copyToClipboard'
 import { getCurrentTeamId } from 'lib/utils/getAppContext'
 import { createActionFromEvent } from 'scenes/activity/explore/createActionFromEvent'
+import { isAutocaptureWithElements, saveActionFromEvent } from 'scenes/activity/explore/saveActionFromEvent'
 import { insightUrlForEvent } from 'scenes/insights/utils'
 import { ArchiveSurveyButton } from 'scenes/surveys/components/ArchiveSurveyButton'
 import { teamLogic } from 'scenes/teamLogic'
@@ -40,22 +41,34 @@ function EventRowActionsDropdown({ event }: { event: EventType }): JSX.Element {
 
     return (
         <>
-            {getCurrentTeamId() && (
+            {isAutocaptureWithElements(event) ? (
                 <LemonButton
                     onClick={() =>
-                        void createActionFromEvent(
-                            getCurrentTeamId(),
-                            event,
-                            0,
-                            teamLogic.findMounted()?.values.currentTeam?.data_attributes || [],
-                            'Unfiled/Actions'
-                        )
+                        saveActionFromEvent(event, teamLogic.findMounted()?.values.currentTeam?.data_attributes || [])
                     }
                     fullWidth
-                    data-attr="events-table-create-action"
+                    data-attr="events-table-save-as-action"
                 >
-                    Create action from event
+                    Save as action
                 </LemonButton>
+            ) : (
+                getCurrentTeamId() && (
+                    <LemonButton
+                        onClick={() =>
+                            void createActionFromEvent(
+                                getCurrentTeamId(),
+                                event,
+                                0,
+                                teamLogic.findMounted()?.values.currentTeam?.data_attributes || [],
+                                'Unfiled/Actions'
+                            )
+                        }
+                        fullWidth
+                        data-attr="events-table-create-action"
+                    >
+                        Create action from event
+                    </LemonButton>
+                )
             )}
             {event.event === SurveyEventName.SENT && event.uuid && event.properties.$survey_id ? (
                 <ArchiveSurveyButton surveyId={event.properties.$survey_id} responseUuid={event.uuid} />
