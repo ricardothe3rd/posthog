@@ -334,7 +334,6 @@ jobs:
               uses: actions/setup-python@v6
               with:
                   python-version: 3.12.12
-                  token: ${{ secrets.POSTHOG_BOT_PAT }}
 
             - name: Install uv
               id: setup-uv
