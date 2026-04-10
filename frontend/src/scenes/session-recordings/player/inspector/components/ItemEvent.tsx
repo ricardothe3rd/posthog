@@ -19,7 +19,9 @@ import { IconOpenInNew } from 'lib/lemon-ui/icons'
 import { Spinner } from 'lib/lemon-ui/Spinner'
 import { autoCaptureEventToDescription, capitalizeFirstLetter, ceilMsToClosestSecond, isString } from 'lib/utils'
 import { AutocapturePreviewImage } from 'lib/utils/autocapture-previews'
+import { isAutocaptureWithElements, saveActionFromEvent } from 'scenes/activity/explore/saveActionFromEvent'
 import { insightUrlForEvent } from 'scenes/insights/utils'
+import { teamLogic } from 'scenes/teamLogic'
 import { urls } from 'scenes/urls'
 
 import { ItemTimeDisplay } from '../../../components/ItemTimeDisplay'
@@ -150,6 +152,17 @@ export function ItemEventMenu({ item }: ItemEventProps): JSX.Element {
                     to: urls.currentProject(urls.event(String(item.data.id), item.data.timestamp)),
                     targetBlank: true,
                 },
+                isAutocaptureWithElements(item.data)
+                    ? {
+                          label: 'Save as action',
+                          'data-attr': 'replay-save-as-action',
+                          onClick: () =>
+                              saveActionFromEvent(
+                                  item.data,
+                                  teamLogic.findMounted()?.values.currentTeam?.data_attributes || []
+                              ),
+                      }
+                    : null,
                 item.data.event === '$exception' && '$exception_issue_id' in item.data.properties
                     ? {
                           label: 'View issue in Error Tracking',

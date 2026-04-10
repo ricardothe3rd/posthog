@@ -627,3 +627,33 @@ export const AITraceEvent: Story = {
         ),
     },
 }
+
+export const AutocaptureWithElements: Story = {
+    render: renderBasic as any,
+    args: {
+        item: makeItem(
+            {},
+            {
+                event: '$autocapture',
+                elements: [
+                    {
+                        tag_name: 'button',
+                        text: 'Submit',
+                        attr_class: ['btn', 'btn-primary'],
+                        attributes: { attr__class: 'btn btn-primary' },
+                        order: 0,
+                    },
+                    {
+                        tag_name: 'form',
+                        attributes: { 'attr__data-testid': 'signup-form' },
+                        order: 1,
+                    },
+                ],
+            },
+            {
+                $current_url: 'https://example.com/signup',
+                $event_type: 'click',
+            }
+        ),
+    },
+}
