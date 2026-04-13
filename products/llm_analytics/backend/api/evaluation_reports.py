@@ -59,7 +59,11 @@ class EvaluationReportSerializer(serializers.ModelSerializer):
         attrs = super().validate(attrs)
         frequency = attrs.get("frequency") or (self.instance.frequency if self.instance else None)
         if frequency == EvaluationReport.Frequency.EVERY_N:
-            threshold = attrs.get("trigger_threshold") or (self.instance.trigger_threshold if self.instance else None)
+            threshold = (
+                attrs.get("trigger_threshold")
+                if "trigger_threshold" in attrs
+                else (self.instance.trigger_threshold if self.instance else None)
+            )
             if threshold is None:
                 raise serializers.ValidationError({"trigger_threshold": "Required when frequency is 'every_n'."})
             if threshold < EvaluationReport.TRIGGER_THRESHOLD_MIN:
