@@ -29,7 +29,13 @@ class Migration(migrations.Migration):
                 (
                     "frequency",
                     models.CharField(
-                        choices=[("hourly", "Hourly"), ("daily", "Daily"), ("weekly", "Weekly")],
+                        choices=[
+                            ("hourly", "Hourly"),
+                            ("daily", "Daily"),
+                            ("weekly", "Weekly"),
+                            ("every_n", "Every N"),
+                        ],
+                        default="every_n",
                         max_length=10,
                     ),
                 ),
@@ -61,6 +67,30 @@ class Migration(migrations.Migration):
                 ("enabled", models.BooleanField(default=True)),
                 ("deleted", models.BooleanField(default=False)),
                 ("last_delivered_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "trigger_threshold",
+                    models.IntegerField(
+                        blank=True,
+                        default=100,
+                        help_text="Number of new eval results that triggers a report",
+                        null=True,
+                    ),
+                ),
+                (
+                    "cooldown_minutes",
+                    models.IntegerField(
+                        default=60,
+                        help_text="Minimum minutes between count-triggered reports",
+                    ),
+                ),
+                (
+                    "daily_run_cap",
+                    models.IntegerField(
+                        default=10,
+                        help_text="Maximum count-triggered report runs per calendar day (UTC)",
+                    ),
+                ),
+                ("report_prompt_guidance", models.TextField(blank=True, default="")),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "team",
