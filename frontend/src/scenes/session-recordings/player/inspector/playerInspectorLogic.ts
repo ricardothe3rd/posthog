@@ -1400,6 +1400,8 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
                 s.allPerformanceEvents,
                 s.sessionComments,
                 s.sessionCommentsLoading,
+                s.logs,
+                s.logsLoading,
             ],
             (
                 sessionEventsDataLoading: boolean,
@@ -1415,7 +1417,9 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
                 } | null,
                 performanceEvents: PerformanceEvent[] | null,
                 sessionComments: CommentType[] | null,
-                sessionCommentsLoading: boolean
+                sessionCommentsLoading: boolean,
+                logs: LogMessage[] | null,
+                logsLoading: boolean
             ): Record<FilterableInspectorListItemTypes, 'loading' | 'ready' | 'empty'> => {
                 const dataForEventsState = sessionEventsDataLoading ? 'loading' : events?.length ? 'ready' : 'empty'
                 const dataForConsoleState =
@@ -1444,12 +1448,15 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
                       ? 'ready'
                       : 'empty'
 
+                const dataForLogsState = logsLoading ? 'loading' : logs?.length ? 'ready' : 'empty'
+
                 return {
                     ['events']: dataForEventsState,
                     ['console']: dataForConsoleState,
                     ['network']: dataForNetworkState,
                     ['comment']: dataForCommentState,
                     ['doctor']: dataForDoctorState,
+                    ['logs']: dataForLogsState,
                 }
             },
         ],
