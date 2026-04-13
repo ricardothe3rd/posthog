@@ -89,7 +89,7 @@ class TestEvaluationReportApi(APIBaseTest):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNotNone(response.json()["next_delivery_date"])
 
-    def test_create_requires_delivery_targets(self):
+    def test_create_allows_empty_delivery_targets(self):
         response = self.client.post(
             self.base_url,
             {
@@ -100,7 +100,7 @@ class TestEvaluationReportApi(APIBaseTest):
             },
             format="json",
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_validate_email_target(self):
         response = self.client.post(

@@ -102,6 +102,8 @@ class EvaluationReport(UUIDTModel):
 
     @property
     def rrule(self):
+        if self.is_count_triggered:
+            raise ValueError("rrule is not available for count-triggered reports (frequency='every_n').")
         freq_map: dict[str, int] = {
             self.Frequency.HOURLY: HOURLY,
             self.Frequency.DAILY: DAILY,
