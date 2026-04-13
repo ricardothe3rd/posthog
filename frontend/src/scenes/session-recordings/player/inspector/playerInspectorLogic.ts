@@ -395,6 +395,7 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
         setItemExpanded: (index: number, expanded: boolean) => ({ index, expanded }),
         setSyncScrollPaused: (paused: boolean) => ({ paused }),
         setLogsHasMore: (hasMore: boolean) => ({ hasMore }),
+        setLogsNextCursor: (cursor: string | undefined) => ({ cursor }),
     })),
     reducers(() => ({
         expandedItems: [
@@ -420,6 +421,12 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
             false,
             {
                 setLogsHasMore: (_, { hasMore }) => hasMore,
+            },
+        ],
+        logsNextCursor: [
+            undefined as string | undefined,
+            {
+                setLogsNextCursor: (_, { cursor }) => cursor,
             },
         ],
     })),
@@ -520,10 +527,58 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
                             },
                         })
                         actions.setLogsHasMore(response.hasMore)
+                        actions.setLogsNextCursor(response.nextCursor)
                         return response.results
                     } catch (error) {
                         console.error('Failed to load backend logs for session replay', error)
                         return []
+                    }
+                },
+                loadMoreLogs: async () => {
+                    if (!values.logsNextCursor || !values.logsHasMore) {
+                        return values.logs
+                    }
+
+                    const sessionId = props.sessionRecordingId
+                    if (!sessionId || !values.start || !values.end) {
+                        return values.logs
+                    }
+
+                    try {
+                        const response = await api.logs.query({
+                            query: {
+                                dateRange: {
+                                    date_from: values.start.toISOString(),
+                                    date_to: values.end.toISOString(),
+                                },
+                                filterGroup: {
+                                    type: FilterLogicalOperator.And,
+                                    values: [
+                                        {
+                                            type: FilterLogicalOperator.And,
+                                            values: [
+                                                {
+                                                    key: 'session_id',
+                                                    value: sessionId,
+                                                    operator: PropertyOperator.Exact,
+                                                    type: PropertyFilterType.LogAttribute,
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                severityLevels: [],
+                                serviceNames: [],
+                                limit: 1000,
+                                afterCursor: values.logsNextCursor,
+                            },
+                        })
+                        actions.setLogsHasMore(response.hasMore)
+                        actions.setLogsNextCursor(response.nextCursor)
+                        return [...values.logs, ...response.results]
+                    } catch (error) {
+                        console.error('Failed to load more backend logs for session replay', error)
+                        return values.logs
                     }
                 },
             },
