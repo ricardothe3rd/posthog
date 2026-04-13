@@ -74,7 +74,11 @@ class EvaluationReportSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"trigger_threshold": f"Maximum is {EvaluationReport.TRIGGER_THRESHOLD_MAX}."}
                 )
-            cooldown = attrs.get("cooldown_minutes", EvaluationReport.COOLDOWN_MINUTES_DEFAULT)
+            cooldown = (
+                attrs.get("cooldown_minutes")
+                if "cooldown_minutes" in attrs
+                else (self.instance.cooldown_minutes if self.instance else EvaluationReport.COOLDOWN_MINUTES_DEFAULT)
+            )
             if cooldown < EvaluationReport.COOLDOWN_MINUTES_MIN:
                 raise serializers.ValidationError(
                     {"cooldown_minutes": f"Minimum is {EvaluationReport.COOLDOWN_MINUTES_MIN} minutes."}
