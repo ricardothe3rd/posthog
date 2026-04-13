@@ -570,7 +570,7 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
                                 severityLevels: [],
                                 serviceNames: [],
                                 limit: 1000,
-                                afterCursor: values.logsNextCursor,
+                                after: values.logsNextCursor,
                             },
                         })
                         actions.setLogsHasMore(response.hasMore)
