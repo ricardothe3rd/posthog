@@ -135,6 +135,11 @@ export const WithLogsFilter: Story = {
         featureFlags: [FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS],
     },
     decorators: [
+        mswDecorator({
+            get: {
+                '/api/projects/:team_id/logs/has_logs/': { hasLogs: true },
+            },
+        }),
         (Story) => {
             setFeatureFlags([FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS])
             return <Story />
@@ -147,6 +152,11 @@ export const WithLogsFilterUpsell: Story = {
         featureFlags: [FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS],
     },
     decorators: [
+        mswDecorator({
+            get: {
+                '/api/projects/:team_id/logs/has_logs/': { hasLogs: false },
+            },
+        }),
         (Story) => {
             setFeatureFlags([FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS])
             return <Story />
