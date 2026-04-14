@@ -41,7 +41,7 @@ async function rasterizeRecordingActivity(
     const activityStart = process.hrtime()
     const id = randomUUID()
     const workDir = process.env.VIDEO_WORK_DIR || os.tmpdir()
-    const ext = input.output_format === 'webm' ? 'webm' : input.output_format === 'gif' ? 'gif' : 'mp4'
+    const ext = input.output_format || 'mp4'
     const outputPath = path.join(workDir, `ph-video-${id}.${ext}`)
 
     const timings: ActivityTimings = { total_s: 0, setup_s: 0, capture_s: 0, upload_s: 0 }

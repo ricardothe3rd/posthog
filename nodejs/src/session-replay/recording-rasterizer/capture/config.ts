@@ -57,7 +57,7 @@ export function buildCaptureConfig(input: RasterizeRecordingInput): CaptureConfi
         outputFormat === 'webm'
             ? ['-f webm', '-c:v libvpx-vp9', '-crf 30', '-b:v 0']
             : outputFormat === 'gif'
-              ? ['-f gif']
+              ? ['-f gif', '-c:v gif']
               : ['-crf 23', '-pix_fmt yuv420p', '-movflags +faststart']
     if (input.trim) {
         ffmpegOutputOpts.push(`-t ${input.trim}`)

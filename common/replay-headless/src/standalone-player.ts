@@ -45,7 +45,7 @@ async function init(config: PlayerConfig, bridge: HostBridge): Promise<void> {
     bridge.publishSegments(segments, firstTimestamp)
     bridge.signalStarted()
 
-    const startOffset = config.startOffsetS ? config.startOffsetS * 1000 : 0
+    const startOffset = config.startOffsetS != null ? config.startOffsetS * 1000 : 0
     await bridge.waitForStart()
     controller.start(Math.max(0, startOffset))
 }
