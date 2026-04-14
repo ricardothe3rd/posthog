@@ -1,19 +1,6 @@
 import equal from 'fast-deep-equal'
 import FuseClass from 'fuse.js'
-import {
-    actions,
-    connect,
-    events,
-    kea,
-    key,
-    listeners,
-    path,
-    props,
-    propsChanged,
-    reducers,
-    selectors,
-    subscriptions,
-} from 'kea'
+import { actions, connect, events, kea, key, listeners, path, props, propsChanged, reducers, selectors } from 'kea'
 import { loaders } from 'kea-loaders'
 
 import {
@@ -1583,12 +1570,9 @@ export const playerInspectorLogic = kea<playerInspectorLogicType>([
                     actions.registerWindowId(windowId)
                 }
             }
-        },
-    })),
-    subscriptions(({ actions, values }) => ({
-        start: (start: Dayjs | null, oldStart: Dayjs | null) => {
-            // Trigger loadLogs when start becomes available (goes from null to a value)
-            if (start && !oldStart && !values.logsLoading && values.logs.length === 0) {
+
+            // Load logs once session data is available (start/end are now populated)
+            if (values.start && !values.logsLoading && values.logs.length === 0) {
                 actions.loadLogs()
             }
         },
