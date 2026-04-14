@@ -1,5 +1,6 @@
 import { MOCK_DEFAULT_USER } from 'lib/api.mock'
 
+import { router } from 'kea-router'
 import { expectLogic } from 'kea-test-utils'
 
 import { dayjs } from 'lib/dayjs'
@@ -132,6 +133,57 @@ describe('timeSensitiveAuthenticationLogic', () => {
                 apiStatusLogic.actions.setTimeSensitiveAuthenticationRequired(true)
             }).toMatchValues({
                 showAuthenticationModal: true,
+            })
+        })
+    })
+
+    describe('preReauthLocation tracking', () => {
+        it('captures the current location when re-auth is triggered', async () => {
+            router.actions.push('/settings/user-notifications')
+            await expectLogic(router).delay(1)
+
+            await expectLogic(logic, () => {
+                apiStatusLogic.actions.setTimeSensitiveAuthenticationRequired(true)
+            }).toMatchValues({
+                preReauthLocation: '/settings/user-notifications',
+            })
+        })
+
+        it('preserves the originally-captured location across re-triggers', async () => {
+            router.actions.push('/settings/user-notifications')
+            await expectLogic(router).delay(1)
+            apiStatusLogic.actions.setTimeSensitiveAuthenticationRequired(true)
+
+            // User navigates elsewhere while modal is up, re-auth retriggers — original wins
+            router.actions.push('/home')
+            await expectLogic(router).delay(1)
+            await expectLogic(logic, () => {
+                apiStatusLogic.actions.setTimeSensitiveAuthenticationRequired(true)
+            }).toMatchValues({
+                preReauthLocation: '/settings/user-notifications',
+            })
+        })
+
+        it('clears location when re-auth requirement is cleared', async () => {
+            router.actions.push('/settings/user-notifications')
+            await expectLogic(router).delay(1)
+            apiStatusLogic.actions.setTimeSensitiveAuthenticationRequired(true)
+
+            await expectLogic(logic, () => {
+                apiStatusLogic.actions.setTimeSensitiveAuthenticationRequired(false)
+            }).toMatchValues({
+                preReauthLocation: null,
+            })
+        })
+
+        it('does not track auth-related routes as a destination', async () => {
+            router.actions.push('/login?next=/settings/user-notifications')
+            await expectLogic(router).delay(1)
+
+            await expectLogic(logic, () => {
+                apiStatusLogic.actions.setTimeSensitiveAuthenticationRequired(true)
+            }).toMatchValues({
+                preReauthLocation: null,
             })
         })
     })

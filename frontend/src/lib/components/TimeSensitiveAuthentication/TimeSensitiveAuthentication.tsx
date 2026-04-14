@@ -21,6 +21,7 @@ export function TimeSensitiveAuthenticationModal(): JSX.Element {
         passkey2FALoading,
         passkeysAvailable,
         totpAvailable,
+        preReauthLocation,
     } = useValues(timeSensitiveAuthenticationLogic)
     const { submitReauthentication, setDismissedReauthentication, beginPasskey2FA } = useActions(
         timeSensitiveAuthenticationLogic
@@ -29,8 +30,10 @@ export function TimeSensitiveAuthenticationModal(): JSX.Element {
     const ssoEnforcement = precheckResponse?.sso_enforcement
     const showPassword = !ssoEnforcement && user?.has_password
 
+    // Prefer the location captured when re-auth was first triggered so SSO round-trips
+    // return the user to the page that needed re-auth, even if the URL has drifted since.
     const extraQueryParams = {
-        next: location.href.replace(location.origin, ''),
+        next: preReauthLocation || location.href.replace(location.origin, ''),
         email: user?.email || '',
         reauth: 'true',
     }

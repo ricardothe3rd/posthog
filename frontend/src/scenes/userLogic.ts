@@ -231,7 +231,21 @@ export const userLogic = kea<userLogicType>([
     listeners(({ actions, values }) => ({
         logout: () => {
             posthog.reset()
-            window.location.href = '/logout'
+            // Preserve where the user was, so after re-login they land back on the same page.
+            // Only safe, in-app paths are forwarded — never auth-related routes.
+            const { pathname, search, hash } = window.location
+            const currentPath = pathname + search + hash
+            const shouldForward =
+                pathname.startsWith('/') &&
+                !pathname.startsWith('//') &&
+                pathname !== '/' &&
+                pathname !== '/login' &&
+                !pathname.startsWith('/login/') &&
+                pathname !== '/logout' &&
+                !pathname.startsWith('/logout/') &&
+                pathname !== '/signup' &&
+                !pathname.startsWith('/signup/')
+            window.location.href = shouldForward ? `/logout?next=${encodeURIComponent(currentPath)}` : '/logout'
         },
         loadUserSuccess: ({ user }) => {
             if (user && user.uuid) {

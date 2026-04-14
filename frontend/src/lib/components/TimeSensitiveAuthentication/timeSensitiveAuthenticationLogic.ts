@@ -6,6 +6,7 @@ import {
 import { actions, connect, kea, listeners, path, reducers, selectors } from 'kea'
 import { forms } from 'kea-forms'
 import { loaders } from 'kea-loaders'
+import { router } from 'kea-router'
 import { subscriptions } from 'kea-subscriptions'
 import posthog from 'posthog-js'
 
@@ -29,6 +30,20 @@ export interface TwoFAMethodsResponse {
 }
 
 const LOOKAHEAD_EXPIRY_SECONDS = 60 * 5
+
+// Navigate back to `preReauthLocation` if the user has drifted away during re-auth
+// (typical case after a modal re-auth: nothing has moved and this is a no-op).
+function restorePreReauthLocation(preReauthLocation: string | null): void {
+    if (!preReauthLocation) {
+        return
+    }
+    const { pathname, search, hash } = router.values.location
+    const currentLocation = pathname + (search || '') + (hash || '')
+    if (currentLocation === preReauthLocation) {
+        return
+    }
+    router.actions.push(preReauthLocation)
+}
 
 export const timeSensitiveAuthenticationLogic = kea<timeSensitiveAuthenticationLogicType>([
     path(['lib', 'components', 'timeSensitiveAuthenticationLogic']),
@@ -71,6 +86,37 @@ export const timeSensitiveAuthenticationLogic = kea<timeSensitiveAuthenticationL
             true as boolean,
             {
                 setTotpAvailable: (_, { available }) => available,
+            },
+        ],
+        // Capture the in-app location at the moment re-authentication was triggered,
+        // so we can return the user here after they successfully re-authenticate —
+        // guards against any intervening navigation (e.g. background logout races,
+        // user-triggered route changes while the modal is open).
+        preReauthLocation: [
+            null as string | null,
+            {
+                setTimeSensitiveAuthenticationRequired: (state, { required }) => {
+                    if (!required) {
+                        return null
+                    }
+                    if (state) {
+                        // Already tracked from an earlier trigger — keep the original location
+                        return state
+                    }
+                    const { pathname, search, hash } = router.values.location
+                    // Never redirect back to auth-related routes
+                    if (
+                        pathname === '/login' ||
+                        pathname.startsWith('/login/') ||
+                        pathname === '/logout' ||
+                        pathname.startsWith('/logout/') ||
+                        pathname === '/signup' ||
+                        pathname.startsWith('/signup/')
+                    ) {
+                        return null
+                    }
+                    return pathname + (search || '') + (hash || '')
+                },
             },
         ],
     }),
@@ -212,6 +258,7 @@ export const timeSensitiveAuthenticationLogic = kea<timeSensitiveAuthenticationL
                 values.timeSensitiveAuthenticationRequired[0]() // Resolve
             }
             posthog.capture('reauthentication_completed')
+            restorePreReauthLocation(values.preReauthLocation)
             actions.setTimeSensitiveAuthenticationRequired(false)
             // Refresh the user so we know the new session expiry
             actions.loadUser()
@@ -221,6 +268,7 @@ export const timeSensitiveAuthenticationLogic = kea<timeSensitiveAuthenticationL
                 values.timeSensitiveAuthenticationRequired[0]() // Resolve
             }
             posthog.capture('reauthentication_completed', { method: 'passkey_2fa' })
+            restorePreReauthLocation(values.preReauthLocation)
             actions.setTimeSensitiveAuthenticationRequired(false)
             // Refresh the user so we know the new session expiry
             actions.loadUser()

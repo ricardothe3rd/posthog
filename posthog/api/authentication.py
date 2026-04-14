@@ -120,6 +120,13 @@ def logout(request):
         restore_original_login(request)
         return redirect(f"/admin/posthog/user/{impersonated_user_pk}/change/")
 
+    # Preserve any `next` provided on logout so after re-login the user lands back where they were.
+    # Fall back to Django's standard logout_then_login behavior if no safe `next` was supplied.
+    next_param = request.GET.get("next") or request.POST.get("next")
+    if next_param and next_param.startswith("/") and not next_param.startswith("//"):
+        login_url = f"{settings.LOGIN_URL}?{urlencode({'next': next_param})}"
+        return auth_views.LogoutView.as_view(next_page=login_url)(request)
+
     response = auth_views.logout_then_login(request)
     return response
 
