@@ -427,16 +427,16 @@ class LazyTableResolver(TraversingVisitor):
                     if table_type == field.table_type or (
                         isinstance(field.table_type, ast.VirtualTableType) and table_type == field.table_type.table_type
                     ):
-                        chain: list[str | int] = []
+                        field_chain: list[str | int] = []
                         if isinstance(field.table_type, ast.VirtualTableType):
-                            chain.append(field.table_type.field)
-                        chain.append(field.name)
+                            field_chain.append(field.table_type.field)
+                        field_chain.append(field.name)
                         if property is not None:
-                            chain.extend(property.chain)
-                            property.joined_subquery_field_name = "___".join(str(x) for x in chain)
-                            new_join.fields_accessed[property.joined_subquery_field_name] = chain
+                            field_chain.extend(property.chain)
+                            property.joined_subquery_field_name = "___".join(str(x) for x in field_chain)
+                            new_join.fields_accessed[property.joined_subquery_field_name] = field_chain
                         else:
-                            new_join.fields_accessed[field.name] = chain
+                            new_join.fields_accessed[field.name] = field_chain
                 elif isinstance(table_type, ast.LazyTableType):
                     table_name = get_long_table_name(select_type, table_type)
                     if table_name not in tables_to_add:
@@ -448,16 +448,16 @@ class LazyTableResolver(TraversingVisitor):
                     if table_type == field.table_type or (
                         isinstance(field.table_type, ast.VirtualTableType) and table_type == field.table_type.table_type
                     ):
-                        chain = []
+                        lazy_table_field_chain: list[str | int] = []
                         if isinstance(field.table_type, ast.VirtualTableType):
-                            chain.append(field.table_type.field)
-                        chain.append(field.name)
+                            lazy_table_field_chain.append(field.table_type.field)
+                        lazy_table_field_chain.append(field.name)
                         if property is not None:
-                            chain.extend(property.chain)
-                            property.joined_subquery_field_name = "___".join(str(x) for x in chain)
-                            new_table.fields_accessed[property.joined_subquery_field_name] = chain
+                            lazy_table_field_chain.extend(property.chain)
+                            property.joined_subquery_field_name = "___".join(str(x) for x in lazy_table_field_chain)
+                            new_table.fields_accessed[property.joined_subquery_field_name] = lazy_table_field_chain
                         else:
-                            new_table.fields_accessed[field.name] = chain
+                            new_table.fields_accessed[field.name] = lazy_table_field_chain
                 elif isinstance(table_type, (ast.TableAliasType, ast.ColumnAliasedTableType)):
                     if isinstance(table_type.table_type, ast.LazyJoinType):
                         from_table = get_long_table_name(select_type, table_type.table_type)
@@ -475,16 +475,18 @@ class LazyTableResolver(TraversingVisitor):
                             isinstance(field.table_type, ast.VirtualTableType)
                             and table_type == field.table_type.table_type
                         ):
-                            chain: list[str | int] = []
+                            aliased_join_field_chain: list[str | int] = []
                             if isinstance(field.table_type, ast.VirtualTableType):
-                                chain.append(field.table_type.field)
-                            chain.append(field.name)
+                                aliased_join_field_chain.append(field.table_type.field)
+                            aliased_join_field_chain.append(field.name)
                             if property is not None:
-                                chain.extend(property.chain)
-                                property.joined_subquery_field_name = "___".join(str(x) for x in chain)
-                                new_join.fields_accessed[property.joined_subquery_field_name] = chain
+                                aliased_join_field_chain.extend(property.chain)
+                                property.joined_subquery_field_name = "___".join(
+                                    str(x) for x in aliased_join_field_chain
+                                )
+                                new_join.fields_accessed[property.joined_subquery_field_name] = aliased_join_field_chain
                             else:
-                                new_join.fields_accessed[field.name] = chain
+                                new_join.fields_accessed[field.name] = aliased_join_field_chain
                     elif isinstance(table_type.table_type, ast.LazyTableType):
                         table_name = get_long_table_name(select_type, table_type)
                         if table_name not in tables_to_add:
@@ -497,16 +499,20 @@ class LazyTableResolver(TraversingVisitor):
                             isinstance(field.table_type, ast.VirtualTableType)
                             and table_type == field.table_type.table_type
                         ):
-                            chain = []
+                            aliased_table_field_chain: list[str | int] = []
                             if isinstance(field.table_type, ast.VirtualTableType):
-                                chain.append(field.table_type.field)
-                            chain.append(field.name)
+                                aliased_table_field_chain.append(field.table_type.field)
+                            aliased_table_field_chain.append(field.name)
                             if property is not None:
-                                chain.extend(property.chain)
-                                property.joined_subquery_field_name = "___".join(str(x) for x in chain)
-                                new_table.fields_accessed[property.joined_subquery_field_name] = chain
+                                aliased_table_field_chain.extend(property.chain)
+                                property.joined_subquery_field_name = "___".join(
+                                    str(x) for x in aliased_table_field_chain
+                                )
+                                new_table.fields_accessed[property.joined_subquery_field_name] = (
+                                    aliased_table_field_chain
+                                )
                             else:
-                                new_table.fields_accessed[field.name] = chain
+                                new_table.fields_accessed[field.name] = aliased_table_field_chain
 
         # Make sure we also add fields we will use for the join's "ON" condition into the list of fields accessed.
         # Without this "pdi.person.id" won't work if you did not ALSO select "pdi.person_id" explicitly for the join.

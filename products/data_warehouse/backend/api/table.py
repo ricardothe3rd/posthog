@@ -302,8 +302,8 @@ class TableViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST, data={"message": "The table must be a manually linked table"}
             )
 
-        columns = table.columns
-        column_keys: list[str] = columns.keys()
+        columns = dict(table.columns or {})
+        column_keys = list(columns.keys())
         for key in updates.keys():
             if key not in column_keys:
                 return response.Response(
@@ -323,16 +323,24 @@ class TableViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
             # If the column is in the "old" style, convert it to the new
             if isinstance(current_value, str):
                 columns[key] = {}
+                current_value = columns[key]
+            if not isinstance(current_value, dict):
+                return response.Response(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    data={"message": f"Column {key} has invalid metadata"},
+                )
 
-            columns[key]["clickhouse"] = f"Nullable({SERIALIZED_FIELD_TO_CLICKHOUSE_MAPPING[value]})"
-            columns[key]["hogql"] = CLICKHOUSE_HOGQL_MAPPING[SERIALIZED_FIELD_TO_CLICKHOUSE_MAPPING[value]].__name__
+            current_value["clickhouse"] = f"Nullable({SERIALIZED_FIELD_TO_CLICKHOUSE_MAPPING[value]})"
+            current_value["hogql"] = CLICKHOUSE_HOGQL_MAPPING[SERIALIZED_FIELD_TO_CLICKHOUSE_MAPPING[value]].__name__
 
         table.columns = columns
         table.save()
 
         # Have to update the `valid` value separately to the `columns` value as the columns are required in the `ast.S3Table` class when querying ClickHouse
         for key in updates.keys():
-            columns[key]["valid"] = table.validate_column_type(key)
+            column_value = columns[key]
+            if isinstance(column_value, dict):
+                column_value["valid"] = table.validate_column_type(key)
 
         table.columns = columns
         table.save()
@@ -421,6 +429,13 @@ class TableViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
         try:
             # Create the table if it doesn't exist, otherwise use existing one
             if table is None:
+                from posthog.models.user import User
+
+                if not isinstance(request.user, User):
+                    return response.Response(
+                        status=status.HTTP_400_BAD_REQUEST,
+                        data={"message": "Authenticated user required"},
+                    )
                 table = DataWarehouseTable.objects.create(
                     team_id=team_id,
                     name=table_name,

@@ -238,9 +238,8 @@ class HogQLQueryExecutor:
     @tracer.start_as_current_span("HogQLQueryExecutor._parse_query")
     def _parse_query(self):
         with self.timings.measure("query"):
-            if isinstance(self.query, ast.SelectQuery) or isinstance(self.query, ast.SelectSetQuery):
+            if isinstance(self.query, (ast.SelectQuery, ast.SelectSetQuery)):
                 self.select_query = self.query
-                self.query = None
             else:
                 self.select_query = parse_select(str(self.query), timings=self.timings)
 
@@ -354,7 +353,7 @@ class HogQLQueryExecutor:
             self.print_columns = []
             columns_query = (
                 next(extract_select_queries(select_query_hogql))
-                if isinstance(select_query_hogql, ast.SelectSetQuery)
+                if not isinstance(select_query_hogql, ast.SelectQuery)
                 else select_query_hogql
             )
             for node in columns_query.select:

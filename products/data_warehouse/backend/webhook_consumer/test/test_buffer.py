@@ -7,13 +7,26 @@ from products.data_warehouse.backend.webhook_consumer.config import WebhookConsu
 
 
 def _make_config(**kwargs) -> WebhookConsumerConfig:
-    defaults = {
+    defaults: dict[str, str | int | float] = {
         "input_topic": "test-topic",
         "consumer_group": "test-group",
         "dlq_topic": "test-dlq",
     }
     defaults.update(kwargs)
-    return WebhookConsumerConfig(**defaults)
+    return WebhookConsumerConfig(
+        input_topic=str(defaults["input_topic"]),
+        consumer_group=str(defaults["consumer_group"]),
+        dlq_topic=str(defaults["dlq_topic"]),
+        flush_interval_seconds=float(defaults.get("flush_interval_seconds", 60.0)),
+        max_batch_messages=int(defaults.get("max_batch_messages", 10_000)),
+        max_buffer_size_bytes=int(defaults.get("max_buffer_size_bytes", 2 * 1024 * 1024 * 1024)),
+        poll_timeout_seconds=float(defaults.get("poll_timeout_seconds", 1.0)),
+        poll_batch_size=int(defaults.get("poll_batch_size", 500)),
+        health_port=int(defaults.get("health_port", 8081)),
+        health_timeout_seconds=float(defaults.get("health_timeout_seconds", 120.0)),
+        max_retries=int(defaults.get("max_retries", 3)),
+        retry_backoff_seconds=float(defaults.get("retry_backoff_seconds", 1.0)),
+    )
 
 
 class TestSchemaBuffer:

@@ -108,7 +108,7 @@ class TestBytecodeExecute:
                 "tuple": ("item1", "item2", "item3"),
             }
         }
-        chain: list[str] = ["properties", "bla"]
+        chain: list[str | int] = ["properties", "bla"]
         assert get_nested_value(my_dict, chain) == "hello"
 
         chain = ["properties", "list", 2]
@@ -832,7 +832,11 @@ class TestBytecodeExecute:
             globals=globals,
         ) == {"event": "$autocapture", "properties": {"$browser": "Firefox"}}
         assert globals["globalEvent"]["event"] == "$pageview"
-        assert globals["globalEvent"]["properties"]["$browser"] == "Chrome"
+        global_event = globals["globalEvent"]
+        assert isinstance(global_event, dict)
+        global_properties = global_event["properties"]
+        assert isinstance(global_properties, dict)
+        assert global_properties["$browser"] == "Chrome"
 
     def test_bytecode_if_multiif_ternary(self):
         values = []

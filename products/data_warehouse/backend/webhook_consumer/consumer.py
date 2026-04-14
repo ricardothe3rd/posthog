@@ -202,7 +202,8 @@ class WebhookS3Sink:
                 for msg in raw_messages:
                     err = msg.error()
                     if err is not None:
-                        if err.code() == KafkaError._PARTITION_EOF:
+                        partition_eof = getattr(KafkaError, "_PARTITION_EOF", None)
+                        if partition_eof is not None and err.code() == partition_eof:
                             continue
                         logger.error("kafka_message_error", error=err)
                         continue

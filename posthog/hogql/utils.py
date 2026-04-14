@@ -1,9 +1,12 @@
 import re
 from dataclasses import fields
-from typing import Any, Union, get_args, get_origin
+from types import UnionType
+from typing import Any, TypeGuard, Union, get_args, get_origin
 
 from posthog.hogql import ast
 from posthog.hogql.ast import AST, AST_CLASSES, Constant, Expr, HogQLXAttribute, HogQLXTag
+
+type SimpleValue = int | float | str | bool | list[SimpleValue] | dict[str, SimpleValue]
 
 
 def like_matches(pattern: str, text: str) -> bool:
@@ -44,7 +47,7 @@ def ilike_matches(pattern: str, text: str) -> bool:
 
 
 def unwrap_optional(t):
-    if get_origin(t) is Union and type(None) in get_args(t):
+    if get_origin(t) in (Union, UnionType) and type(None) in get_args(t):
         # Return the first argument, which is the actual type in Optional[type]
         return next(arg for arg in get_args(t) if arg is not type(None))
     return t
@@ -60,7 +63,7 @@ def is_ast_subclass(t):
     return isinstance(t, type) and issubclass(t, AST)
 
 
-def is_simple_value(value: Any) -> bool:
+def is_simple_value(value: Any) -> TypeGuard[SimpleValue]:
     if isinstance(value, int) or isinstance(value, float) or isinstance(value, str) or isinstance(value, bool):
         return True
     if isinstance(value, list):
@@ -79,6 +82,7 @@ def deserialize_hx_tag(hog_tag: dict) -> HogQLXTag:
     for k, v in hog_tag.items():
         if k == "__hx_tag":
             continue
+        value: Any
         if isinstance(v, list):
             value = [
                 deserialize_hx_ast(item)
@@ -112,7 +116,7 @@ def deserialize_hx_ast(hog_ast: dict) -> AST:
     cls_fields = {f.name: f.type for f in fields(cls)}
     init_args: dict[str, Any] = {}
 
-    def _deserialize(value: Any, field_type: type) -> Any:
+    def _deserialize(value: Any, field_type: Any) -> Any:
         if isinstance(value, dict) and "__hx_tag" in value:
             return deserialize_hx_tag(value)
 
@@ -141,10 +145,10 @@ def deserialize_hx_ast(hog_ast: dict) -> AST:
 
         init_args[key] = _deserialize(value, cls_fields[key])
 
-    return cls(**init_args)  # type: ignore
+    return cls(**init_args)
 
 
-def map_virtual_properties(e: ast.Expr):
+def map_virtual_properties(e: ast.Expr) -> ast.Expr:
     if (
         isinstance(e, ast.Field)
         and len(e.chain) >= 2

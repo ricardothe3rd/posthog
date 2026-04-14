@@ -102,7 +102,7 @@ class LabelQuery(models.Lookup):
     def as_sql(self, compiler, connection):
         lhs, lhs_params = self.process_lhs(compiler, connection)
         rhs, rhs_params = self.process_rhs(compiler, connection)
-        params = lhs_params + rhs_params
+        params = [*lhs_params, *rhs_params]
         return "%s ~ %s" % (lhs, rhs), params  # noqa: UP031
 
 
@@ -118,7 +118,7 @@ class LabelQueryArray(models.Lookup):
     def as_sql(self, compiler, connection):
         lhs, lhs_params = self.process_lhs(compiler, connection)
         rhs, rhs_params = self.process_rhs(compiler, connection)
-        params = lhs_params + rhs_params
+        params = [*lhs_params, *rhs_params]
         return "%s ? %s" % (lhs, rhs), params  # noqa: UP031
 
 
@@ -360,10 +360,14 @@ class DataWarehouseModelPathManager(models.Manager["DataWarehouseModelPath"]):
         Raises:
             ValueError: If no paths exists for the provided `DataWarehouseSavedQuery`.
         """
+        saved_query_query = saved_query.query if isinstance(saved_query.query, dict) else {}
+        model_query = saved_query_query.get("query")
+        assert isinstance(model_query, str)
+
         return self.create_leaf_paths_from_query(
             team=saved_query.team,
             model_name=saved_query.name,
-            model_query=saved_query.query["query"],
+            model_query=model_query,
             saved_query_id=saved_query.id,
             created_by=saved_query.created_by,
             label=saved_query.id.hex,
@@ -515,10 +519,14 @@ class DataWarehouseModelPathManager(models.Manager["DataWarehouseModelPath"]):
         if not self.filter(team=saved_query.team, saved_query=saved_query).exists():
             raise ValueError("Provided saved query contains no paths to update.")
 
+        saved_query_query = saved_query.query if isinstance(saved_query.query, dict) else {}
+        model_query = saved_query_query.get("query")
+        assert isinstance(model_query, str)
+
         self.update_paths_from_query(
             team=saved_query.team,
             model_name=saved_query.name,
-            model_query=saved_query.query["query"],
+            model_query=model_query,
             label=saved_query.id.hex,
             saved_query_id=saved_query.id,
         )

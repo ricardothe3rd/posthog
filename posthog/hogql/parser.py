@@ -238,7 +238,7 @@ class HogQLParseTreeConverter(ParseTreeVisitor):
                 node.end = end
             return node
         except BaseHogQLError as e:
-            if start is not None and end is not None and e.start is None or e.end is None:
+            if start is not None and end is not None and (e.start is None or e.end is None):
                 e.start = start
                 e.end = end
             raise
@@ -279,7 +279,9 @@ class HogQLParseTreeConverter(ParseTreeVisitor):
         return ast.ReturnStatement(expr=self.visit(ctx.expression()) if ctx.expression() else None)
 
     def visitThrowStmt(self, ctx: HogQLParser.ThrowStmtContext):
-        return ast.ThrowStatement(expr=self.visit(ctx.expression()) if ctx.expression() else None)
+        expr = ctx.expression()
+        assert expr is not None
+        return ast.ThrowStatement(expr=self.visit(expr))
 
     def visitCatchBlock(self, ctx: HogQLParser.CatchBlockContext):
         return (
@@ -303,9 +305,11 @@ class HogQLParseTreeConverter(ParseTreeVisitor):
         )
 
     def visitWhileStmt(self, ctx: HogQLParser.WhileStmtContext):
+        statement = ctx.statement()
+        assert statement is not None
         return ast.WhileStatement(
             expr=self.visit(ctx.expression()),
-            body=self.visit(ctx.statement()) if ctx.statement() else None,
+            body=self.visit(statement),
         )
 
     def visitForInStmt(self, ctx: HogQLParser.ForInStmtContext):
@@ -1231,7 +1235,8 @@ class HogQLParseTreeConverter(ParseTreeVisitor):
 
     def visitColumnExprCase(self, ctx: HogQLParser.ColumnExprCaseContext):
         columns = [self.visit(column) for column in ctx.columnExpr()]
-        if ctx.caseExpr:
+        case_expr = getattr(ctx, "caseExpr", None)
+        if case_expr is not None:
             args = [columns[0], ast.Array(exprs=[]), ast.Array(exprs=[]), columns[-1]]
             for index, column in enumerate(columns):
                 if 0 < index < len(columns) - 1:

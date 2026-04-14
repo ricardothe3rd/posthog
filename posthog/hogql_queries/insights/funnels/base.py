@@ -146,6 +146,7 @@ class FunnelBase(ABC):
                 team__project_id=team.project_id, pk__in=[b for b in breakdown if b != "all"]
             )
         else:
+            assert breakdown is not None
             cohorts = Cohort.objects.filter(team__project_id=team.project_id, pk=breakdown)
 
         return list(cohorts)

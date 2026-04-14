@@ -199,9 +199,25 @@ class Resolver(CloningVisitor):
             limit_percent=node.limit_percent,
             limit_with_ties=node.limit_with_ties,
         )
-        result.type = ast.SelectSetQueryType(
-            types=[result.initial_select_query.type, *(x.select_query.type for x in result.subsequent_select_queries)]  # type: ignore
-        )
+        initial_type = result.initial_select_query.type
+        assert initial_type is not None
+        subsequent_types: list[ast.SelectQueryType] = []
+
+        def collect_select_query_types(
+            select_type: ast.SelectQueryType | ast.SelectSetQueryType,
+        ) -> list[ast.SelectQueryType]:
+            if isinstance(select_type, ast.SelectSetQueryType):
+                collected_types: list[ast.SelectQueryType] = []
+                for nested_type in select_type.types:
+                    collected_types.extend(collect_select_query_types(nested_type))
+                return collected_types
+            return [select_type]
+
+        for select_node in result.subsequent_select_queries:
+            select_type = select_node.select_query.type
+            assert select_type is not None
+            subsequent_types.extend(collect_select_query_types(select_type))
+        result.type = ast.SelectSetQueryType(types=[initial_type, *subsequent_types])
 
         self.ctes = parent_ctes
 
@@ -682,7 +698,7 @@ class Resolver(CloningVisitor):
             else:
                 select_nodes.append(new_expr)
 
-        columns_with_visible_alias = {}
+        columns_with_visible_alias: dict[str, bool] = {}
         for new_expr in select_nodes:
             if isinstance(new_expr.type, ast.FieldAliasType):
                 alias = new_expr.type.alias
@@ -703,10 +719,10 @@ class Resolver(CloningVisitor):
                 # Make a reference of the first visible or last hidden expr for each unique alias name.
                 if isinstance(new_expr, ast.Alias) and new_expr.hidden:
                     if alias not in node_type.columns or not columns_with_visible_alias.get(alias, False):
-                        node_type.columns[alias] = new_expr.type
+                        node_type.columns[alias] = new_expr.type or ast.UnknownType()
                         columns_with_visible_alias[alias] = False
                 else:
-                    node_type.columns[alias] = new_expr.type
+                    node_type.columns[alias] = new_expr.type or ast.UnknownType()
                     columns_with_visible_alias[alias] = True
 
             # add the column to the new select query
@@ -1568,9 +1584,11 @@ class Resolver(CloningVisitor):
                 )
 
         # Apply virtual property mapping before field resolution
-        node = map_virtual_properties(node)
+        mapped_node = map_virtual_properties(node)
+        if not isinstance(mapped_node, ast.Field):
+            return self.visit(mapped_node)
 
-        node = super().visit_field(node)
+        node = super().visit_field(mapped_node)
         name = str(node.chain[0])
 
         # Only look for fields in the last SELECT scope, instead of all previous select queries.
@@ -1648,7 +1666,7 @@ class Resolver(CloningVisitor):
         if not type:
             if self.context.globals is not None and name in self.context.globals:
                 parsed_chain: list[str] = []
-                value = self.context.globals
+                value: Any = self.context.globals
                 for link in node.chain:
                     parsed_chain.append(str(link))
                     if isinstance(value, dict):
@@ -1718,8 +1736,6 @@ class Resolver(CloningVisitor):
             resolved_chain.append(str(next_chain))
             # Note: get_child currently always raises rather than returning None,
             # but this guard is kept for safety in case that contract changes.
-            if loop_type is None:
-                raise ResolutionError(f"Cannot resolve type {'.'.join(node.chain)}. Unable to resolve {next_chain}.")
         node.type = loop_type
 
         if isinstance(node.type, ast.ExpressionFieldType):
@@ -1824,45 +1840,42 @@ class Resolver(CloningVisitor):
 
     def visit_between_expr(self, node: ast.BetweenExpr):
         node = super().visit_between_expr(node)
-        if node is None:
-            return None
         node.type = ast.BooleanType(nullable=False)
         return node
 
     def visit_is_distinct_from(self, node: ast.IsDistinctFrom):
         node = super().visit_is_distinct_from(node)
-        if node is None:
-            return None
         node.type = ast.BooleanType(nullable=False)
         return node
 
     def visit_constant(self, node: ast.Constant):
         node = super().visit_constant(node)
-        if node is None:
-            return None
         node.type = resolve_constant_data_type(node.value)
         return node
 
     def visit_and(self, node: ast.And):
         node = super().visit_and(node)
-        if node is None:
-            return None
+        expr_types = [expr.type for expr in node.exprs]
+        assert all(expr_type is not None for expr_type in expr_types)
+        resolved_expr_types = [cast(ast.Type, expr_type) for expr_type in expr_types]
         node.type = ast.BooleanType(
-            nullable=any(expr.type.resolve_constant_type(self.context).nullable for expr in node.exprs)
+            nullable=any(expr_type.resolve_constant_type(self.context).nullable for expr_type in resolved_expr_types)
         )
         return node
 
     def visit_or(self, node: ast.Or):
         node = super().visit_or(node)
-        if node is None:
-            return None
+        expr_types = [expr.type for expr in node.exprs]
+        assert all(expr_type is not None for expr_type in expr_types)
+        resolved_expr_types = [cast(ast.Type, expr_type) for expr_type in expr_types]
         node.type = ast.BooleanType(
-            nullable=any(expr.type.resolve_constant_type(self.context).nullable for expr in node.exprs)
+            nullable=any(expr_type.resolve_constant_type(self.context).nullable for expr_type in resolved_expr_types)
         )
         return node
 
     def visit_not(self, node: ast.Not):
         node = super().visit_not(node)
+        assert node.expr.type is not None
         node.type = ast.BooleanType(nullable=node.expr.type.resolve_constant_type(self.context).nullable)
         return node
 

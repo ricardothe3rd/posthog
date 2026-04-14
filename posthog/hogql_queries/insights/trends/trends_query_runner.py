@@ -1073,10 +1073,11 @@ class TrendsQueryRunner(AnalyticsQueryRunner[TrendsQueryResponse]):
                 else self.query.breakdownFilter.breakdown
             )
 
-            if breakdown_key not in dict(table_or_view.columns):
+            columns = table_or_view.columns or {}
+            if breakdown_key not in columns:
                 return False
 
-            field_type = dict(table_or_view.columns)[breakdown_key]["clickhouse"]
+            field_type = columns[breakdown_key]["clickhouse"]
 
             if field_type.startswith("Nullable("):
                 field_type = field_type.replace("Nullable(", "")[:-1]

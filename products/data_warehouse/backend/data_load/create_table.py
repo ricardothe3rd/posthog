@@ -63,13 +63,16 @@ async def create_table_from_saved_query(
 
     saved_query_id_converted = str(uuid.UUID(saved_query_id))
     saved_query = await aget_saved_query_by_id(saved_query_id=saved_query_id_converted, team_id=team_id)
+    if saved_query is None:
+        raise ValueError(f"Saved query {saved_query_id_converted} not found")
+    resolved_saved_query = saved_query
 
     # nosemgrep: idor-lookup-without-team (internal Temporal activity, not API-exposed)
     job = await DataModelingJob.objects.aget(id=job_id)
 
     try:
-        table_name = f"{saved_query.name}"
-        url_pattern = saved_query.url_pattern
+        table_name = f"{resolved_saved_query.name}"
+        url_pattern = resolved_saved_query.url_pattern
         table_format = DataWarehouseTable.TableFormat.DeltaS3Wrapper
 
         table_params = {
@@ -139,14 +142,14 @@ async def create_table_from_saved_query(
         )
     except ServerException as err:
         logger.exception(
-            f"Data Warehouse: Unknown ServerException {saved_query.pk}",
+            f"Data Warehouse: Unknown ServerException {resolved_saved_query.pk}",
             exc_info=err,
         )
         raise
     except Exception as e:
         # TODO: handle other exceptions here
         logger.exception(
-            f"Data Warehouse: Could not validate schema for saved query materialization{saved_query.pk}",
+            f"Data Warehouse: Could not validate schema for saved query materialization{resolved_saved_query.pk}",
             exc_info=e,
         )
         raise

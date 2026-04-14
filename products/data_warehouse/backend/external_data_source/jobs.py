@@ -15,6 +15,7 @@ def update_external_job_status(
     else:
         schema_status = status  # type: ignore
 
+    assert model.schema_id is not None
     schema = ExternalDataSchema.objects.get(id=model.schema_id, team_id=team_id)
     schema.status = schema_status
     schema.latest_error = latest_error

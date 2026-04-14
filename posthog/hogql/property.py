@@ -283,8 +283,10 @@ def _handle_bool_values(value: ValueT, expr: ast.Expr, property: Property, team:
 
         table_or_view = get_view_or_table_by_name(team, current_join.joining_table_name)
         if table_or_view:
-            prop_type_dict = table_or_view.columns.get(property.key, None)
-            prop_type = prop_type_dict.get("hogql")
+            table_or_view_columns = table_or_view.columns or {}
+            prop_type_dict = table_or_view_columns.get(property.key)
+            if isinstance(table_or_view_columns, dict) and isinstance(prop_type_dict, dict):
+                prop_type = prop_type_dict.get("hogql")
 
         if not table_or_view:
             raise Exception(f"Could not find table or view for key {key}")
@@ -1104,7 +1106,10 @@ def property_to_expr(
     elif property.type == "cohort" or property.type == "static-cohort" or property.type == "precalculated-cohort":
         if not team:
             raise Exception("Can not convert cohort property to expression without team")
-        cohort = Cohort.objects.get(team__project_id=team.project_id, id=property.value)
+        cohort_value = property.value
+        if isinstance(cohort_value, bool) or not isinstance(cohort_value, (str, int)):
+            raise ValidationError("Cohort property value must be a string or integer")
+        cohort = Cohort.objects.get(team__project_id=team.project_id, id=cohort_value)
         return ast.CompareOperation(
             left=ast.Field(chain=["id" if scope == "person" else "person_id"]),
             op=(
@@ -1250,7 +1255,10 @@ def entity_to_expr(entity: RetentionEntity, team: Team) -> ast.Expr:
     if entity.type == TREND_FILTER_TYPE_ACTIONS and entity.id is not None:
         # action
         try:
-            action = Action.objects.get(pk=entity.id, team=team)
+            action_id = entity.id
+            if not isinstance(action_id, (str, int)):
+                raise ValidationError(f"Action ID {action_id} is invalid!")
+            action = Action.objects.get(pk=action_id, team=team)
         except Action.DoesNotExist:
             raise ValidationError(f"Action ID {entity.id} does not exist!")
         event_expr = action_to_expr(action)

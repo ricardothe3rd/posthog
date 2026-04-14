@@ -1,5 +1,6 @@
 import uuid
 from datetime import timedelta
+from typing import cast
 
 from posthog.test.base import APIBaseTest
 from unittest import mock
@@ -1066,7 +1067,9 @@ class TestSavedQuery(APIBaseTest):
             ).order_by("-created_at")
             self.assertEqual(activity_logs.count(), 2)
             self.assertEqual(activity_logs[0].activity, "updated")
-            query_change = next(change for change in activity_logs[0].detail["changes"] if change["field"] == "query")
+            assert isinstance(activity_logs[0].detail, dict)
+            detail_changes = cast(list[dict[str, object]], activity_logs[0].detail["changes"])
+            query_change = next(change for change in detail_changes if change["field"] == "query")
             self.assertEqual(
                 query_change["after"],
                 {
@@ -1082,7 +1085,9 @@ class TestSavedQuery(APIBaseTest):
                 },
             )
             self.assertEqual(activity_logs[1].activity, "created")
-            query_change = next(change for change in activity_logs[1].detail["changes"] if change["field"] == "query")
+            assert isinstance(activity_logs[1].detail, dict)
+            created_detail_changes = cast(list[dict[str, object]], activity_logs[1].detail["changes"])
+            query_change = next(change for change in created_detail_changes if change["field"] == "query")
             self.assertEqual(
                 query_change["after"],
                 {

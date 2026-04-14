@@ -16,8 +16,9 @@ def resolve_in_cohorts(
     dialect: HogQLDialect,
     stack: Optional[list[ast.SelectQuery]] = None,
     context: Optional[HogQLContext] = None,
-):
+) -> _T_AST:
     InCohortResolver(stack=stack, dialect=dialect, context=context).visit(node)
+    return node
 
 
 def resolve_in_cohorts_conjoined(
@@ -25,8 +26,9 @@ def resolve_in_cohorts_conjoined(
     dialect: HogQLDialect,
     context: HogQLContext,
     stack: Optional[list[ast.SelectQuery]] = None,
-):
+) -> ast.AST:
     MultipleInCohortResolver(stack=stack, dialect=dialect, context=context).visit(node)
+    return node
 
 
 class CohortCompareOperationTraverser(TraversingVisitor):
@@ -255,8 +257,11 @@ class MultipleInCohortResolver(TraversingVisitor):
                 ),
             )
 
-            new_join.constraint.expr.left = ast.Field(chain=[f"__in_cohort", "cohort_person_id"])  # type: ignore
-            new_join.constraint.expr.right = clone_expr(compare_operations[0].left)  # type: ignore
+            assert new_join.constraint is not None
+            constraint_expr = new_join.constraint.expr
+            assert isinstance(constraint_expr, ast.CompareOperation)
+            constraint_expr.left = ast.Field(chain=[f"__in_cohort", "cohort_person_id"])
+            constraint_expr.right = clone_expr(compare_operations[0].left)
             if last_join:
                 last_join.next_join = new_join
             else:
@@ -293,6 +298,8 @@ class InCohortResolver(TraversingVisitor):
 
     def visit_compare_operation(self, node: ast.CompareOperation):
         if node.op == ast.CompareOperationOp.InCohort or node.op == ast.CompareOperationOp.NotInCohort:
+            assert self.context is not None
+            assert self.stack
             arg = node.right
             if not isinstance(arg, ast.Constant):
                 raise QueryError("IN COHORT only works with constant arguments", node=arg)
@@ -361,6 +368,9 @@ class InCohortResolver(TraversingVisitor):
         from posthog.hogql.transforms.lazy_tables import resolve_lazy_tables
 
         assert self.context is not None
+        assert self.stack
+        current_select_type = self.stack[-1].type
+        assert current_select_type is not None
 
         must_add_join = True
         last_join = select.select_from
@@ -410,7 +420,7 @@ class InCohortResolver(TraversingVisitor):
             )
             new_join = cast(
                 ast.JoinExpr,
-                resolve_types(new_join, self.context, self.dialect, [self.stack[-1].type]),
+                resolve_types(new_join, self.context, self.dialect, [current_select_type]),
             )
             if inline_ast is not None:
                 resolve_lazy_tables(new_join, self.dialect, [self.stack[-1]], self.context)
@@ -419,13 +429,16 @@ class InCohortResolver(TraversingVisitor):
                         ast.JoinExpr,
                         self.context.property_swapper.visit(new_join),
                     )
-            new_join.constraint.expr.left = resolve_types(
+            assert new_join.constraint is not None
+            constraint_expr = new_join.constraint.expr
+            assert isinstance(constraint_expr, ast.CompareOperation)
+            constraint_expr.left = resolve_types(
                 ast.Field(chain=[f"in_cohort__{cohort_id}", "person_id"]),
                 self.context,
                 self.dialect,
-                [self.stack[-1].type],
+                [current_select_type],
             )
-            new_join.constraint.expr.right = clone_expr(compare.left)
+            constraint_expr.right = clone_expr(compare.left)
             if last_join:
                 last_join.next_join = new_join
             else:
@@ -436,6 +449,6 @@ class InCohortResolver(TraversingVisitor):
             ast.Field(chain=[f"in_cohort__{cohort_id}", "matched"]),
             self.context,
             self.dialect,
-            [self.stack[-1].type],
+            [current_select_type],
         )
-        compare.right = resolve_types(ast.Constant(value=1), self.context, self.dialect, [self.stack[-1].type])
+        compare.right = resolve_types(ast.Constant(value=1), self.context, self.dialect, [current_select_type])

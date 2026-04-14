@@ -27,7 +27,7 @@ def replace_filters(node: T, filters: Optional[HogQLFilters], team: Team) -> T:
 
 
 class ReplaceFilters(CloningVisitor):
-    def __init__(self, filters: Optional[HogQLFilters], team: Team = None):
+    def __init__(self, filters: Optional[HogQLFilters], team: Team | None = None):
         super().__init__()
         self.filters = filters
         self.team = team
@@ -90,6 +90,7 @@ class ReplaceFilters(CloningVisitor):
                 return ast.Constant(value=True)
 
             assert self.filters is not None
+            assert self.team is not None
 
             exprs: list[ast.Expr] = []
             if self.filters.properties is not None:
@@ -165,6 +166,7 @@ class ReplaceFilters(CloningVisitor):
                 return ast.Constant(value=True)
 
             assert self.filters is not None
+            assert self.team is not None
 
             dateFrom = self.filters.dateRange.date_from if self.filters.dateRange else None
             if dateFrom is not None and dateFrom != "all":
@@ -187,6 +189,7 @@ class ReplaceFilters(CloningVisitor):
                 return ast.Constant(value=True)
 
             assert self.filters is not None
+            assert self.team is not None
 
             dateTo = self.filters.dateRange.date_to if self.filters.dateRange else None
             if dateTo is not None:

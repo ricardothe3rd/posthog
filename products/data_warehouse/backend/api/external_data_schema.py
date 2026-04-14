@@ -1,6 +1,6 @@
 import datetime as dt
 import dataclasses
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import structlog
 import temporalio
@@ -115,7 +115,7 @@ class ExternalDataSchemaSerializer(serializers.ModelSerializer):
         return schema.sync_type_config.get("incremental_field_type")
 
     def get_sync_type(self, schema: ExternalDataSchema) -> ExternalDataSchema.SyncType | None:
-        return schema.sync_type
+        return cast(ExternalDataSchema.SyncType | None, schema.sync_type)
 
     def get_table(self, schema: ExternalDataSchema) -> Optional[dict]:
         from products.data_warehouse.backend.api.table import SimpleTableSerializer
@@ -219,6 +219,7 @@ class ExternalDataSchemaSerializer(serializers.ModelSerializer):
                     validated_data["sync_type_config"] = payload
 
         should_sync = validated_data.get("should_sync", None)
+        effective_should_sync = should_sync if isinstance(should_sync, bool) else instance.should_sync
         sync_frequency = data.get("sync_frequency", None)
         sync_time_of_day_in_payload = "sync_time_of_day" in data
         sync_time_of_day = data.get("sync_time_of_day", None)
@@ -266,7 +267,7 @@ class ExternalDataSchemaSerializer(serializers.ModelSerializer):
                     sync_external_data_job_workflow(instance, create=True, should_sync=should_sync)
 
             if was_sync_frequency_updated or was_sync_time_of_day_updated:
-                sync_external_data_job_workflow(instance, create=False, should_sync=should_sync)
+                sync_external_data_job_workflow(instance, create=False, should_sync=effective_should_sync)
 
         # When re-enabling a webhook schema, force a full refresh to avoid missing data
         if (

@@ -169,8 +169,9 @@ class TestTable(APIBaseTest):
             "a_column": {"clickhouse": "Nullable(String)", "hogql": "StringDatabaseField", "valid": True},
         }
 
-        assert table.credential.access_key, "_accesskey"
-        assert table.credential.access_secret, "_accesssecret"
+        assert table.credential is not None
+        assert table.credential.access_key == "_accesskey"
+        assert table.credential.access_secret == "_accesssecret"
 
     @patch(
         "products.data_warehouse.backend.models.table.DataWarehouseTable.get_columns",
@@ -208,8 +209,9 @@ class TestTable(APIBaseTest):
             "a_column": {"clickhouse": "Nullable(String)", "hogql": "StringDatabaseField", "valid": False},
         }
 
-        assert table.credential.access_key, "_accesskey"
-        assert table.credential.access_secret, "_accesssecret"
+        assert table.credential is not None
+        assert table.credential.access_key == "_accesskey"
+        assert table.credential.access_secret == "_accesssecret"
 
     @patch("products.data_warehouse.backend.models.table.DataWarehouseTable.get_columns")
     def test_credentialerror(self, patch_get_columns):
@@ -247,6 +249,7 @@ class TestTable(APIBaseTest):
         table.refresh_from_db()
 
         assert response.status_code == 200
+        assert isinstance(table.columns, dict)
         assert table.columns["id"] == {"clickhouse": "Nullable(Float64)", "hogql": "FloatDatabaseField", "valid": True}
 
     @patch(
@@ -268,6 +271,7 @@ class TestTable(APIBaseTest):
         table.refresh_from_db()
 
         assert response.status_code == 200
+        assert isinstance(table.columns, dict)
         assert table.columns["id"] == {"clickhouse": "Nullable(Float64)", "hogql": "FloatDatabaseField", "valid": True}
 
     def test_update_schema_200_no_updates(self):

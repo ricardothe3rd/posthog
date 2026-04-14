@@ -111,13 +111,14 @@ class DataWarehouseJoin(CreatedMetaFields, UUIDTModel, DeletedMetaFields):
             context: HogQLContext,
             node: SelectQuery,
         ):
+            configuration = self.configuration or {}
             if self.joining_table_name != "events":
                 raise ResolutionError("experiments_optimized is only supported for events table")
 
-            if not self.configuration.get("experiments_optimized"):
+            if not configuration.get("experiments_optimized"):
                 raise ResolutionError("experiments_optimized is not enabled for this join")
 
-            timestamp_key = self.configuration.get("experiments_timestamp_key")
+            timestamp_key = configuration.get("experiments_timestamp_key")
             if not timestamp_key:
                 raise ResolutionError("experiments_timestamp_key is not set for this join")
 

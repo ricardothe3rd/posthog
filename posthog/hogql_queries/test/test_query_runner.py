@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, cast
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -235,9 +235,7 @@ class TestQueryRunner(BaseTest):
 
     def test_cache_key_runner_subclass(self):
         TestQueryRunner = self.setup_test_query_runner_class()
-
-        class TestSubclassQueryRunner(TestQueryRunner):
-            pass
+        TestSubclassQueryRunner = cast(type[QueryRunner], type("TestSubclassQueryRunner", (TestQueryRunner,), {}))
 
         # set the pk directly as it affects the hash in the _cache_key call
         team = Team.objects.create(pk=42, organization=self.organization)

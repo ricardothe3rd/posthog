@@ -1349,14 +1349,14 @@ class TestFilterToQuery(BaseTest):
             BreakdownFilter(breakdowns=[{"type": BreakdownType.EVENT, "property": "$browser"}]),
         )
 
-        filter: dict[str, Any] = {
+        second_filter: dict[str, Any] = {
             "breakdowns": [
                 {"type": "event", "property": "$browser"},
                 {"type": "session", "property": "$session_duration"},
             ]
         }
 
-        query = filter_to_query(filter)
+        query = filter_to_query(second_filter)
 
         assert isinstance(query, TrendsQuery)
         self.assertEqual(

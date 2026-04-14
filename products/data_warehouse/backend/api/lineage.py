@@ -67,6 +67,8 @@ def get_upstream_dag(team_id: int, model_id: str) -> dict[str, list[Any]]:
     dag: dict[str, list[Any]] = {"nodes": [], "edges": []}
     seen_nodes: set[str] = set()
     node_data: dict[str, dict] = {}
+    saved_queries: dict[str, DataWarehouseSavedQuery] = {}
+    tables: dict[str, DataWarehouseTable] = {}
 
     # root node and its external tables
     root_query = DataWarehouseSavedQuery.objects.filter(id=model_id, team_id=team_id).first()
@@ -85,7 +87,7 @@ def get_upstream_dag(team_id: int, model_id: str) -> dict[str, list[Any]]:
 
     # Recursively fetch all dependencies with a bfs
     # Fetch everything by names, ids and names are the same right now
-    to_process = [(root_query.name, root_query.external_tables)]
+    to_process: list[tuple[str, list[str]]] = [(root_query.name, list(root_query.external_tables or []))]
 
     while to_process:
         current_id, external_tables = to_process.pop(0)
@@ -120,7 +122,7 @@ def get_upstream_dag(team_id: int, model_id: str) -> dict[str, list[Any]]:
                         "last_run_at": saved_query.last_run_at,
                         "status": saved_query.status,
                     }
-                    to_process.append((external_table, saved_query.external_tables))
+                    to_process.append((external_table, list(saved_query.external_tables or [])))
                 else:
                     table = tables.get(external_table)
                     if not table:
