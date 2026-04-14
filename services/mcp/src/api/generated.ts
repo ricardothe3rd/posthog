@@ -12996,6 +12996,22 @@ export namespace Schemas {
       Frequentist: 'frequentist',
     } as const;
 
+    /**
+     * * `pending` - Pending
+    * `delivered` - Delivered
+    * `partial_failure` - Partial Failure
+    * `failed` - Failed
+     */
+    export type DeliveryStatusEnum = typeof DeliveryStatusEnum[keyof typeof DeliveryStatusEnum];
+
+
+    export const DeliveryStatusEnum = {
+      Pending: 'pending',
+      Delivered: 'delivered',
+      PartialFailure: 'partial_failure',
+      Failed: 'failed',
+    } as const;
+
     export interface DependentFlag {
       /** Feature flag ID */
       id: number;
@@ -14524,6 +14540,18 @@ export namespace Schemas {
       daily_run_cap?: number;
       /** @nullable */
       readonly created_by: number | null;
+      readonly created_at: string;
+    }
+
+    export interface EvaluationReportRun {
+      readonly id: string;
+      readonly report: string;
+      readonly content: unknown;
+      readonly metadata: unknown;
+      readonly period_start: string;
+      readonly period_end: string;
+      readonly delivery_status: DeliveryStatusEnum;
+      readonly delivery_errors: unknown;
       readonly created_at: string;
     }
 
@@ -20545,6 +20573,15 @@ export namespace Schemas {
       /** @nullable */
       previous?: string | null;
       results: EvaluationReport[];
+    }
+
+    export interface PaginatedEvaluationReportRunList {
+      count: number;
+      /** @nullable */
+      next?: string | null;
+      /** @nullable */
+      previous?: string | null;
+      results: EvaluationReportRun[];
     }
 
     export interface PaginatedEventSchemaList {
@@ -33699,6 +33736,17 @@ export namespace Schemas {
     };
 
     export type LlmAnalyticsEvaluationReportsListParams = {
+    /**
+     * Number of results to return per page.
+     */
+    limit?: number;
+    /**
+     * The initial index from which to return the results.
+     */
+    offset?: number;
+    };
+
+    export type LlmAnalyticsEvaluationReportsRunsListParams = {
     /**
      * Number of results to return per page.
      */

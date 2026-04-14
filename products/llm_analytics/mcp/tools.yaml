@@ -312,6 +312,6 @@ tools:
     llm-analytics-evaluation-reports-generate-create:
         operation: llm_analytics_evaluation_reports_generate_create
         enabled: false
-    llm-analytics-evaluation-reports-runs-retrieve:
-        operation: llm_analytics_evaluation_reports_runs_retrieve
+    llm-analytics-evaluation-reports-runs-list:
+        operation: llm_analytics_evaluation_reports_runs_list
         enabled: false
