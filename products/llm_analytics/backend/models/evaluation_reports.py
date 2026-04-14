@@ -129,6 +129,7 @@ class EvaluationReport(UUIDTModel):
 
     def save(self, *args, **kwargs):
         recalc = not self.id or not self.next_delivery_date
+        old = None
         if not recalc and self.id:
             # If any schedule field changed, recompute next_delivery_date so the
             # new cadence takes effect immediately rather than after the stale timestamp.
@@ -142,7 +143,16 @@ class EvaluationReport(UUIDTModel):
             self.set_next_delivery_date()
             if "update_fields" in kwargs and kwargs["update_fields"] is not None:
                 kwargs["update_fields"] = list(kwargs["update_fields"])
-                kwargs["update_fields"].append("next_delivery_date")
+                # Persist every schedule field we changed, not just next_delivery_date.
+                # Otherwise a caller-supplied update_fields can drop the field whose
+                # change triggered the recalc, leaving next_delivery_date inconsistent
+                # with the persisted schedule.
+                if old is not None:
+                    for field in self.SCHEDULE_FIELDS:
+                        if getattr(old, field) != getattr(self, field) and field not in kwargs["update_fields"]:
+                            kwargs["update_fields"].append(field)
+                if "next_delivery_date" not in kwargs["update_fields"]:
+                    kwargs["update_fields"].append("next_delivery_date")
         super().save(*args, **kwargs)
 
 

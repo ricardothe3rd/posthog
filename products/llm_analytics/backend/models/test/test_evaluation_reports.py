@@ -139,6 +139,27 @@ class TestEvaluationReportModel(BaseTest):
         assert report.next_delivery_date is not None
         self.assertGreater(report.next_delivery_date, from_dt)
 
+    def test_save_with_update_fields_persists_changed_schedule_field(self):
+        # Regression: save(update_fields=[...]) used to drop a changed schedule
+        # field while still recomputing next_delivery_date from the new value,
+        # leaving the DB inconsistent with the recomputed timestamp.
+        now = timezone.now()
+        evaluation = self._create_evaluation()
+        report = EvaluationReport.objects.create(
+            team=self.team,
+            evaluation=evaluation,
+            frequency="hourly",
+            start_date=now - dt.timedelta(hours=1),
+            delivery_targets=[],
+        )
+        report.frequency = "weekly"
+        report.save(update_fields=["frequency"])
+
+        report.refresh_from_db()
+        self.assertEqual(report.frequency, "weekly")
+        # next_delivery_date must also be persisted since recalc ran
+        assert report.next_delivery_date is not None
+
 
 class TestEvaluationReportRunModel(BaseTest):
     def test_create_report_run(self):
