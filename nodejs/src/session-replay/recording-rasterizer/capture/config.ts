@@ -57,7 +57,7 @@ export function buildCaptureConfig(input: RasterizeRecordingInput): CaptureConfi
         outputFormat === 'webm'
             ? ['-f webm', '-c:v libvpx-vp9', '-crf 30', '-b:v 0']
             : outputFormat === 'gif'
-              ? ['-f gif', '-c:v gif']
+              ? ['-f gif', '-c:v gif', '-loop', '0']
               : ['-crf 23', '-pix_fmt yuv420p', '-movflags +faststart']
     if (input.trim) {
         ffmpegOutputOpts.push(`-t ${input.trim}`)
@@ -71,10 +71,13 @@ export function buildCaptureConfig(input: RasterizeRecordingInput): CaptureConfi
         ffmpegVideoFilters.push(`fps=${outputFps}`)
     }
     if (outputFormat === 'gif') {
-        // Scale down + palette generation for high-quality GIF with small file size.
-        // split+palettegen+paletteuse avoids the banding artifacts of ffmpeg's default dithering.
-        ffmpegVideoFilters.push('scale=640:-1:flags=lanczos')
-        ffmpegVideoFilters.push('split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse')
+        // 12fps keeps file size reasonable. Per-frame palette (stats_mode=single)
+        // with Bayer dithering and rectangle diff mode produces better quality
+        // and smaller files than ffmpeg's defaults.
+        ffmpegVideoFilters.push('fps=12')
+        ffmpegVideoFilters.push(
+            'split[s0][s1];[s0]palettegen=stats_mode=single[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle'
+        )
     }
 
     return {
