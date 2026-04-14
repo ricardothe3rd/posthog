@@ -141,7 +141,12 @@ export const WithLogsFilter: Story = {
             },
         }),
         (Story) => {
-            setFeatureFlags([FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS])
+            useEffect(() => {
+                setFeatureFlags([FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS])
+                return () => {
+                    setFeatureFlags([])
+                }
+            }, [])
             return <Story />
         },
     ],
@@ -158,7 +163,12 @@ export const WithLogsFilterUpsell: Story = {
             },
         }),
         (Story) => {
-            setFeatureFlags([FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS])
+            useEffect(() => {
+                setFeatureFlags([FEATURE_FLAGS.SESSION_REPLAY_BACKEND_LOGS])
+                return () => {
+                    setFeatureFlags([])
+                }
+            }, [])
             return <Story />
         },
     ],
