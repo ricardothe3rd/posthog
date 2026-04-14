@@ -248,6 +248,52 @@ class TestBuildRasterizationInput:
 
         assert result.start_offset_s == 0
 
+    def test_viewport_dimensions_clamped(self):
+        asset = _make_asset(
+            pk=50,
+            export_context={
+                "session_recording_id": "s1",
+                "width": 200,
+                "height": 5000,
+            },
+        )
+
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value.get.return_value = asset
+
+        with (
+            patch("posthog.temporal.session_replay.rasterize_recording.activities.ExportedAsset.objects", mock_qs),
+            patch("posthog.temporal.session_replay.rasterize_recording.activities.settings", MOCK_SETTINGS),
+            patch("posthog.temporal.session_replay.rasterize_recording.activities.close_old_connections"),
+        ):
+            result = build_rasterization_input(50)
+
+        assert result.viewport_width == 400
+        assert result.viewport_height == 2160
+
+    @parameterized.expand(
+        [
+            ("short_clip_uses_1x", {"session_recording_id": "s1", "duration": 5}, 1),
+            ("long_recording_uses_4x", {"session_recording_id": "s1", "duration": 60}, 4),
+            ("no_duration_uses_4x", {"session_recording_id": "s1"}, 4),
+            ("explicit_speed_overrides", {"session_recording_id": "s1", "duration": 3, "playback_speed": 8}, 8),
+        ]
+    )
+    def test_playback_speed_defaults(self, _name, export_context, expected_speed):
+        asset = _make_asset(pk=50, export_context=export_context)
+
+        mock_qs = MagicMock()
+        mock_qs.select_related.return_value.get.return_value = asset
+
+        with (
+            patch("posthog.temporal.session_replay.rasterize_recording.activities.ExportedAsset.objects", mock_qs),
+            patch("posthog.temporal.session_replay.rasterize_recording.activities.settings", MOCK_SETTINGS),
+            patch("posthog.temporal.session_replay.rasterize_recording.activities.close_old_connections"),
+        ):
+            result = build_rasterization_input(50)
+
+        assert result.playback_speed == expected_speed
+
     @parameterized.expand(
         [
             ("fractional_speed", {"session_recording_id": "s1", "playback_speed": 1.5}, "playback_speed", 1.5),

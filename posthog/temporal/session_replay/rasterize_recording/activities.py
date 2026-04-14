@@ -37,17 +37,29 @@ def build_rasterization_input(exported_asset_id: int) -> RasterizationActivityIn
     if end_offset_s is None and duration is not None:
         end_offset_s = (start_offset_s or 0) + duration
 
+    viewport_width = ctx.get("width")
+    viewport_height = ctx.get("height")
+    if viewport_width is not None:
+        viewport_width = max(400, min(3840, int(viewport_width)))
+    if viewport_height is not None:
+        viewport_height = max(300, min(2160, int(viewport_height)))
+
+    # Short clips (≤5s) render at 1x so the output plays at real time.
+    # Full session exports (no duration) render at 4x to keep file size down.
+    default_speed = 1 if (duration is not None and duration <= 5) else 4
+    playback_speed = ctx.get("playback_speed", default_speed)
+
     return RasterizationActivityInput(
         team_id=asset.team_id,
         session_id=session_id,
         s3_bucket=settings.OBJECT_STORAGE_BUCKET,
         s3_key_prefix=s3_key_prefix,
-        playback_speed=ctx.get("playback_speed", 4),
+        playback_speed=playback_speed,
         recording_fps=ctx.get("recording_fps", 24),
         trim=ctx.get("trim"),
         show_metadata_footer=ctx.get("show_metadata_footer", False),
-        viewport_width=ctx.get("width"),
-        viewport_height=ctx.get("height"),
+        viewport_width=viewport_width,
+        viewport_height=viewport_height,
         start_offset_s=start_offset_s,
         end_offset_s=end_offset_s,
         output_format=output_format,

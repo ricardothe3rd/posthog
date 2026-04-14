@@ -749,6 +749,7 @@ class TestExports(APIBaseTest):
             ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", timedelta(days=7)),
             ("video/mp4", timedelta(days=365)),
             ("video/webm", timedelta(days=365)),
+            ("image/gif", timedelta(days=365)),
             ("application/pdf", timedelta(days=180)),
         ]
     )
@@ -757,7 +758,7 @@ class TestExports(APIBaseTest):
     def test_export_expiry_varies_by_format(
         self, export_format, expected_delta, mock_async_connect, mock_async_to_sync
     ) -> None:
-        is_video_format = export_format in ("video/mp4", "video/webm")
+        is_video_format = export_format in ("video/mp4", "video/webm", "image/gif")
 
         if is_video_format:
             payload = {
