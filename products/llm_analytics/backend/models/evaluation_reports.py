@@ -141,6 +141,7 @@ class EvaluationReport(UUIDTModel):
         if recalc:
             self.set_next_delivery_date()
             if "update_fields" in kwargs and kwargs["update_fields"] is not None:
+                kwargs["update_fields"] = list(kwargs["update_fields"])
                 kwargs["update_fields"].append("next_delivery_date")
         super().save(*args, **kwargs)
 
