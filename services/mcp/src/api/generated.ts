@@ -14418,10 +14418,10 @@ export namespace Schemas {
     * `openrouter` - Openrouter
     * `fireworks` - Fireworks
      */
-    export type ProviderEnum = typeof ProviderEnum[keyof typeof ProviderEnum];
+    export type Provider519Enum = typeof Provider519Enum[keyof typeof Provider519Enum];
 
 
-    export const ProviderEnum = {
+    export const Provider519Enum = {
       Openai: 'openai',
       Anthropic: 'anthropic',
       Gemini: 'gemini',
@@ -14433,7 +14433,7 @@ export namespace Schemas {
      * Nested serializer for model configuration.
      */
     export interface ModelConfiguration {
-      provider: ProviderEnum;
+      provider: Provider519Enum;
       /** @maxLength 100 */
       model: string;
       /** @nullable */
@@ -18941,7 +18941,7 @@ export namespace Schemas {
 
     export interface LLMProviderKey {
       readonly id: string;
-      provider: ProviderEnum;
+      provider: Provider519Enum;
       /** @maxLength 255 */
       name: string;
       readonly state: LLMProviderKeyStateEnum;
@@ -22137,6 +22137,46 @@ export namespace Schemas {
       Cancelled: 'cancelled',
     } as const;
 
+    /**
+     * * `claude` - claude
+    * `codex` - codex
+     */
+    export type RuntimeAdapterEnum = typeof RuntimeAdapterEnum[keyof typeof RuntimeAdapterEnum];
+
+
+    export const RuntimeAdapterEnum = {
+      Claude: 'claude',
+      Codex: 'codex',
+    } as const;
+
+    /**
+     * * `anthropic` - anthropic
+    * `openai` - openai
+     */
+    export type ProviderD50Enum = typeof ProviderD50Enum[keyof typeof ProviderD50Enum];
+
+
+    export const ProviderD50Enum = {
+      Anthropic: 'anthropic',
+      Openai: 'openai',
+    } as const;
+
+    /**
+     * * `low` - low
+    * `medium` - medium
+    * `high` - high
+    * `max` - max
+     */
+    export type ReasoningEffortEnum = typeof ReasoningEffortEnum[keyof typeof ReasoningEffortEnum];
+
+
+    export const ReasoningEffortEnum = {
+      Low: 'low',
+      Medium: 'medium',
+      High: 'high',
+      Max: 'max',
+    } as const;
+
     export interface TaskRunArtifactResponse {
       /** Artifact file name */
       name: string;
@@ -22173,6 +22213,17 @@ export namespace Schemas {
     * `local` - Local
     * `cloud` - Cloud */
       environment?: EnvironmentEnum;
+      /** Configured runtime adapter for this run, such as 'claude' or 'codex'. */
+      readonly runtime_adapter: RuntimeAdapterEnum | NullEnum | null;
+      /** Configured LLM provider for this run, such as 'anthropic' or 'openai'. */
+      readonly provider: ProviderD50Enum | NullEnum | null;
+      /**
+       * Configured LLM model identifier for this run.
+       * @nullable
+       */
+      readonly model: string | null;
+      /** Configured reasoning effort for this run when the selected model supports it. */
+      readonly reasoning_effort: ReasoningEffortEnum | NullEnum | null;
       /**
        * Presigned S3 URL for log access (valid for 1 hour).
        * @nullable
@@ -24565,7 +24616,7 @@ export namespace Schemas {
 
     export interface PatchedLLMProviderKey {
       readonly id?: string;
-      provider?: ProviderEnum;
+      provider?: Provider519Enum;
       /** @maxLength 255 */
       name?: string;
       readonly state?: LLMProviderKeyStateEnum;
@@ -31166,6 +31217,25 @@ export namespace Schemas {
       run_source?: RunSourceEnum;
       /** Optional signal report identifier when this run was started from Inbox. */
       signal_report_id?: string;
+      /** Agent runtime adapter to launch for this run. Use 'claude' for the Claude runtime or 'codex' for the Codex runtime.
+
+    * `claude` - claude
+    * `codex` - codex */
+      runtime_adapter?: RuntimeAdapterEnum;
+      /** LLM provider backing the selected runtime adapter.
+
+    * `anthropic` - anthropic
+    * `openai` - openai */
+      provider?: ProviderD50Enum;
+      /** LLM model identifier to run in the selected runtime. */
+      model?: string;
+      /** Reasoning effort to request for models that expose an effort control.
+
+    * `low` - low
+    * `medium` - medium
+    * `high` - high
+    * `max` - max */
+      reasoning_effort?: ReasoningEffortEnum;
       /** Ephemeral GitHub user token from PostHog Code for user-authored cloud pull requests. */
       github_user_token?: string;
     }

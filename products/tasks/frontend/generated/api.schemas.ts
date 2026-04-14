@@ -259,6 +259,43 @@ export const RunSourceEnumApi = {
 } as const
 
 /**
+ * * `claude` - claude
+ * `codex` - codex
+ */
+export type RuntimeAdapterEnumApi = (typeof RuntimeAdapterEnumApi)[keyof typeof RuntimeAdapterEnumApi]
+
+export const RuntimeAdapterEnumApi = {
+    Claude: 'claude',
+    Codex: 'codex',
+} as const
+
+/**
+ * * `anthropic` - anthropic
+ * `openai` - openai
+ */
+export type ProviderD50EnumApi = (typeof ProviderD50EnumApi)[keyof typeof ProviderD50EnumApi]
+
+export const ProviderD50EnumApi = {
+    Anthropic: 'anthropic',
+    Openai: 'openai',
+} as const
+
+/**
+ * * `low` - low
+ * `medium` - medium
+ * `high` - high
+ * `max` - max
+ */
+export type ReasoningEffortEnumApi = (typeof ReasoningEffortEnumApi)[keyof typeof ReasoningEffortEnumApi]
+
+export const ReasoningEffortEnumApi = {
+    Low: 'low',
+    Medium: 'medium',
+    High: 'high',
+    Max: 'max',
+} as const
+
+/**
  * Request body for creating a new task run
  */
 export interface TaskRunCreateRequestApi {
@@ -291,6 +328,25 @@ export interface TaskRunCreateRequestApi {
     run_source?: RunSourceEnumApi
     /** Optional signal report identifier when this run was started from Inbox. */
     signal_report_id?: string
+    /** Agent runtime adapter to launch for this run. Use 'claude' for the Claude runtime or 'codex' for the Codex runtime.
+
+* `claude` - claude
+* `codex` - codex */
+    runtime_adapter?: RuntimeAdapterEnumApi
+    /** LLM provider backing the selected runtime adapter.
+
+* `anthropic` - anthropic
+* `openai` - openai */
+    provider?: ProviderD50EnumApi
+    /** LLM model identifier to run in the selected runtime. */
+    model?: string
+    /** Reasoning effort to request for models that expose an effort control.
+
+* `low` - low
+* `medium` - medium
+* `high` - high
+* `max` - max */
+    reasoning_effort?: ReasoningEffortEnumApi
     /** Ephemeral GitHub user token from PostHog Code for user-authored cloud pull requests. */
     github_user_token?: string
 }
@@ -361,6 +417,17 @@ export interface TaskRunDetailApi {
 * `local` - Local
 * `cloud` - Cloud */
     environment?: EnvironmentEnumApi
+    /** Configured runtime adapter for this run, such as 'claude' or 'codex'. */
+    readonly runtime_adapter: RuntimeAdapterEnumApi | NullEnumApi | null
+    /** Configured LLM provider for this run, such as 'anthropic' or 'openai'. */
+    readonly provider: ProviderD50EnumApi | NullEnumApi | null
+    /**
+     * Configured LLM model identifier for this run.
+     * @nullable
+     */
+    readonly model: string | null
+    /** Configured reasoning effort for this run when the selected model supports it. */
+    readonly reasoning_effort: ReasoningEffortEnumApi | NullEnumApi | null
     /**
      * Presigned S3 URL for log access (valid for 1 hour).
      * @nullable

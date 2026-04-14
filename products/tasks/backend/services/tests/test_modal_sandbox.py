@@ -236,6 +236,31 @@ class TestModalSandboxAgentServer:
         assert "/tmp/agentsh-env-wrapper.sh" in command
         assert "./node_modules/.bin/agent-server" in command
 
+    def test_start_agent_server_includes_runtime_environment_variables(self, mock_sandbox: Any):
+        mock_sandbox.execute = MagicMock(
+            side_effect=[
+                ExecutionResult(stdout="", stderr="", exit_code=0, error=None),
+                ExecutionResult(stdout="ok:1", stderr="", exit_code=0, error=None),
+            ]
+        )
+
+        mock_sandbox.start_agent_server(
+            repository="posthog/posthog",
+            task_id="task-123",
+            run_id="run-456",
+            mode="background",
+            runtime_adapter="codex",
+            provider="openai",
+            model="gpt-5.3-codex",
+            reasoning_effort="high",
+        )
+
+        command = mock_sandbox.execute.call_args_list[0][0][0]
+        assert "POSTHOG_CODE_RUNTIME_ADAPTER=codex" in command
+        assert "POSTHOG_CODE_PROVIDER=openai" in command
+        assert "POSTHOG_CODE_MODEL=gpt-5.3-codex" in command
+        assert "POSTHOG_CODE_REASONING_EFFORT=high" in command
+
     def test_start_agent_server_raises_when_not_running(self, mock_sandbox: Any):
         mock_sandbox._sandbox.poll.return_value = 0
 

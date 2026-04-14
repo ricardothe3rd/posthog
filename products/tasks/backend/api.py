@@ -64,7 +64,12 @@ from .serializers import (
 from .services.connection_token import create_sandbox_connection_token
 from .stream.redis_stream import TaskRunRedisStream, TaskRunStreamError, get_task_run_stream_key
 from .temporal.client import execute_posthog_code_agent_relay_workflow, execute_task_processing_workflow
-from .temporal.process_task.utils import PrAuthorshipMode, cache_github_user_token, parse_run_state
+from .temporal.process_task.utils import (
+    PrAuthorshipMode,
+    cache_github_user_token,
+    get_reasoning_effort_error,
+    parse_run_state,
+)
 
 logger = logging.getLogger(__name__)
 TASK_RUN_STREAM_KEEPALIVE_INTERVAL_SECONDS = 20.0
@@ -255,6 +260,10 @@ class TaskViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
         pr_authorship_mode = request.validated_data.get("pr_authorship_mode")
         run_source = request.validated_data.get("run_source")
         signal_report_id = request.validated_data.get("signal_report_id")
+        runtime_adapter = request.validated_data.get("runtime_adapter")
+        provider = request.validated_data.get("provider")
+        model = request.validated_data.get("model")
+        reasoning_effort = request.validated_data.get("reasoning_effort")
         github_user_token = request.validated_data.get("github_user_token")
 
         extra_state = None
@@ -283,6 +292,14 @@ class TaskViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
                 run_source = prev_state.run_source
             if signal_report_id is None:
                 signal_report_id = prev_state.signal_report_id
+            if runtime_adapter is None:
+                runtime_adapter = prev_state.runtime_adapter
+            if provider is None:
+                provider = prev_state.provider
+            if model is None:
+                model = prev_state.model
+            if reasoning_effort is None:
+                reasoning_effort = prev_state.reasoning_effort
             if branch is None and prev_state.pr_base_branch is not None:
                 branch = prev_state.pr_base_branch
 
@@ -291,10 +308,30 @@ class TaskViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
             "pr_authorship_mode": pr_authorship_mode,
             "run_source": run_source,
             "signal_report_id": signal_report_id,
+            "runtime_adapter": runtime_adapter,
+            "provider": provider,
+            "model": model,
+            "reasoning_effort": reasoning_effort,
         }.items():
             if value is not None:
                 extra_state = extra_state or {}
-                extra_state[key] = value
+                extra_state[key] = value.value if hasattr(value, "value") else value
+
+        reasoning_effort_error = get_reasoning_effort_error(
+            runtime_adapter=runtime_adapter,
+            model=model,
+            reasoning_effort=reasoning_effort,
+        )
+        if reasoning_effort_error is not None:
+            return Response(
+                {
+                    "type": "validation_error",
+                    "code": "invalid_input",
+                    "detail": reasoning_effort_error,
+                    "attr": "reasoning_effort",
+                },
+                status=400,
+            )
 
         # Only require a user token when the task has a repo (no-repo cloud runs skip GitHub operations)
         if pr_authorship_mode == PrAuthorshipMode.USER and task.repository and not github_user_token:

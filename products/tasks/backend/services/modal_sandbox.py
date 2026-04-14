@@ -40,7 +40,12 @@ from products.tasks.backend.services.modal_provision_diagnostics import (
     capture_modal_output_if_debug,
     summarize_modal_output,
 )
-from products.tasks.backend.services.sandbox import WORKING_DIR, SandboxBase, wait_for_health_check
+from products.tasks.backend.services.sandbox import (
+    WORKING_DIR,
+    SandboxBase,
+    build_agent_runtime_env_prefix,
+    wait_for_health_check,
+)
 from products.tasks.backend.temporal.exceptions import (
     SandboxCleanupError,
     SandboxExecutionError,
@@ -542,11 +547,19 @@ class ModalSandbox(SandboxBase):
         mode: str,
         interaction_origin: str | None = None,
         branch: str | None = None,
+        runtime_adapter: str | None = None,
+        provider: str | None = None,
+        model: str | None = None,
+        reasoning_effort: str | None = None,
         mcp_servers_arg: str = "",
         allowed_domains: list[str] | None = None,
     ) -> str:
-        env_prefix = (
-            f"env POSTHOG_CODE_INTERACTION_ORIGIN={shlex.quote(interaction_origin)} " if interaction_origin else ""
+        env_prefix = build_agent_runtime_env_prefix(
+            interaction_origin=interaction_origin,
+            runtime_adapter=runtime_adapter,
+            provider=provider,
+            model=model,
+            reasoning_effort=reasoning_effort,
         )
         repo_flag = f" --repositoryPath {shlex.quote(repo_path)}" if repo_path else ""
         branch_flag = f" --baseBranch {shlex.quote(branch)}" if branch else ""
@@ -582,6 +595,10 @@ class ModalSandbox(SandboxBase):
         mode: str = "background",
         interaction_origin: str | None = None,
         branch: str | None = None,
+        runtime_adapter: str | None = None,
+        provider: str | None = None,
+        model: str | None = None,
+        reasoning_effort: str | None = None,
         mcp_configs: list[McpServerConfig] | None = None,
         allowed_domains: list[str] | None = None,
     ) -> None:
@@ -614,6 +631,10 @@ class ModalSandbox(SandboxBase):
             mode,
             interaction_origin,
             branch,
+            runtime_adapter,
+            provider,
+            model,
+            reasoning_effort,
             mcp_servers_arg,
             allowed_domains=allowed_domains,
         )

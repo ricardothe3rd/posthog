@@ -176,6 +176,10 @@ def start_agent_server(input: StartAgentServerInput) -> StartAgentServerOutput:
                 mode=ctx.mode,
                 interaction_origin=ctx.interaction_origin,
                 branch=ctx.branch,
+                runtime_adapter=ctx.runtime_adapter,
+                provider=ctx.provider,
+                model=ctx.model,
+                reasoning_effort=ctx.reasoning_effort,
                 mcp_configs=mcp_configs or None,
                 allowed_domains=ctx.allowed_domains,
             )
