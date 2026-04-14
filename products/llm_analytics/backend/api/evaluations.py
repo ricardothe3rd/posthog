@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from django.db import transaction
 from django.db.models import Q, QuerySet
 
 import structlog
@@ -24,6 +25,7 @@ from posthog.temporal.llm_analytics.run_evaluation import extract_event_io, run_
 
 from ..models.evaluation_config import EvaluationConfig
 from ..models.evaluation_configs import validate_evaluation_configs
+from ..models.evaluation_reports import EvaluationReport
 from ..models.evaluations import Evaluation
 from ..models.model_configuration import LLMModelConfiguration
 from ..models.provider_keys import LLMProvider, LLMProviderKey
@@ -233,17 +235,16 @@ class EvaluationViewSet(TeamAndOrgViewSetMixin, AccessControlViewSetMixin, Forbi
         return 0
 
     def perform_create(self, serializer):
-        instance = serializer.save()
+        with transaction.atomic():
+            instance = serializer.save()
 
-        # Auto-create a default report config so reports are generated from the start.
-        # Users can later add email/Slack delivery targets if they want notifications.
-        from products.llm_analytics.backend.models.evaluation_reports import EvaluationReport
-
-        EvaluationReport.objects.create(
-            team=self.team,
-            evaluation=instance,
-            start_date=instance.created_at,
-        )
+            # Auto-create a default report config so reports are generated from the start.
+            # Users can later add email/Slack delivery targets if they want notifications.
+            EvaluationReport.objects.create(
+                team=self.team,
+                evaluation=instance,
+                start_date=instance.created_at,
+            )
 
         # Calculate properties for tracking
         conditions = instance.conditions or []
