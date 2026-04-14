@@ -137,6 +137,11 @@ class EvaluationReportViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
         queryset = queryset.filter(team_id=self.team_id).order_by("-created_at")
         if self.action not in ("update", "partial_update"):
             queryset = queryset.filter(deleted=False)
+
+        evaluation_id = self.request.query_params.get("evaluation")
+        if evaluation_id:
+            queryset = queryset.filter(evaluation_id=evaluation_id)
+
         return queryset
 
     @llma_track_latency("llma_evaluation_reports_list")
@@ -163,6 +168,7 @@ class EvaluationReportViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
         instance.deleted = True
         instance.save(update_fields=["deleted"])
 
+    @extend_schema(responses=EvaluationReportRunSerializer(many=True))
     @action(detail=True, methods=["get"], url_path="runs")
     @llma_track_latency("llma_evaluation_report_runs_list")
     def runs(self, request: Request, **kwargs) -> Response:
