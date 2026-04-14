@@ -20086,7 +20086,7 @@ export namespace Schemas {
     }
 
     export interface PaginatedActivityLogList {
-      count?: number;
+      count: number;
       /** @nullable */
       next?: string | null;
       /** @nullable */
