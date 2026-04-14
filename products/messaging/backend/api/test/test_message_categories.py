@@ -585,7 +585,7 @@ class TestOptOutSyncConfigAPI(APIBaseTest):
         config = OptOutSyncConfig.objects.get(team=self.team)
         self.assertFalse(config.track_enabled)
 
-    def test_remove_track_integration(self):
+    def test_remove_track_config(self):
         integration = Integration.objects.create(
             team=self.team,
             kind="customerio-track",
@@ -599,7 +599,7 @@ class TestOptOutSyncConfigAPI(APIBaseTest):
             track_enabled=True,
         )
 
-        response = self.client.delete(self._url("remove_track_integration"))
+        response = self.client.delete(self._url("remove_track_config"))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Integration.objects.filter(team=self.team, kind="customerio-track").exists())
 
@@ -607,8 +607,8 @@ class TestOptOutSyncConfigAPI(APIBaseTest):
         self.assertIsNone(config.track_integration)
         self.assertFalse(config.track_enabled)
 
-    def test_remove_track_integration_succeeds_without_config(self):
-        response = self.client.delete(self._url("remove_track_integration"))
+    def test_remove_track_config_succeeds_without_config(self):
+        response = self.client.delete(self._url("remove_track_config"))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_optout_sync_config_includes_track_fields(self):
