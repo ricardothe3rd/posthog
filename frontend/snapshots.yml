@@ -3408,18 +3408,30 @@ snapshots:
         hash: v1.k794b7964.5b5c59673852be9a3daf0c8559bf2b4048bfe36dd21efb557b9b6c9b1cfb8c8b.pW2h_iydU4L7CsGMqvfg0G7nZZ_jk46LUVYORcy9QFk
     posthog-3000-sidebar--feature-flags--light:
         hash: v1.k794b7964.76ccb8676cb7d915e9746e0e77c65a2f0e155a9300b19c887b3b856e6888e146.HMkKaIOnUeCYw7dySMs4wrEZGCCnx-6WXfdPOS8bqCs
+    products-workflows-customerioimportmodal--all-steps-completed--dark:
+        hash: v1.k794b7964.99933c9ec72966ec7b8bf3c5aa39c21b072f7b71a9dea35f1ad604c616b3aa8e.5G91PjqxKvffIkj1rtwCerktiXxVJepS40y-TWFkMCs
+    products-workflows-customerioimportmodal--all-steps-completed--light:
+        hash: v1.k794b7964.37ed5a5fdb87e5264b1cb45c606510d62637126dc833cda446656e761f1fd38f.86Ix4O2I0bBjjz9uX1l8Y32zWsY5icQsWI7FpeIdWQE
     products-workflows-customerioimportmodal--both-steps-completed--dark:
-        hash: v1.k794b7964.55cd553050cf4bc49c2b6a501e23255a926ea35b3d7775e87d25096d93e72b9b.aLeXp4EkyADxoOeb__XGnLqu6cl2A2ECTqkiSsD2fQ4
+        hash: v1.k794b7964.01d95f3639985a545269ad726c98a0d8b83a889376d93f723c1559b85bd35022.KUWclHGkBdJrf4OntzTd7_cX_rchL3KtSYfn1S5RL0I
     products-workflows-customerioimportmodal--both-steps-completed--light:
-        hash: v1.k794b7964.b034660c276bf7a25f67406929eb3d5a7b4156e46e8e747d491207d9ceda32be.TIl69iQ2sIqaGcg2sYb8PPtCr1YJ84dXsVJ5PY7zEkU
+        hash: v1.k794b7964.da3363082eab54e837e37632b95118d7bf0bfce834683ae6afe292dc5a30fd3c._jH7nYX3XKVc_P0I0gXCLecLyitzAGRbkWzxixzKQ3w
     products-workflows-customerioimportmodal--both-steps-not-completed--dark:
-        hash: v1.k794b7964.cd71c3307133db199543528f67d4691dbf27ad0e04f856169ac92ffd18c8ca11.L0Xp7mjjwI5WStFGtuf4xLPlGn7qK7uvmfCAu67qpeo
+        hash: v1.k794b7964.4989e2f59516da6d322797b64b947d49143b6c35ce21572ffe5d1f78ecae2d9e.1Zr-RXzrmwslMhGidikbCI_6LvPWzdtCtlVyTpwuX_Q
     products-workflows-customerioimportmodal--both-steps-not-completed--light:
-        hash: v1.k794b7964.5c9792977d42945dc855b88c29cb9b3dc4db8065fe7ef70eb40d222e594e0623._X_UJpkzaZyoHaeSY6v6xuhGHM5YkBA4R5bczzyXAno
+        hash: v1.k794b7964.0b3c6e8bea5d2efc0eb1a9cb0f1a9da104a44485cf0276cc5fc6f18b7978fa69.vmSqjH1StEqisNDtudG0mQprThi7meaLI131qqi40kQ
     products-workflows-customerioimportmodal--step-1-completed-but-key-deleted--dark:
-        hash: v1.k794b7964.d45bdf1fa4e2f612d79bf5418722a22495066dc84b51f484b5e8ba59285a3626.Y5dQqxoqjA3JHYDs_tmJUqtP5wtTr41igre-XWLkGEQ
+        hash: v1.k794b7964.d961df84397a6278f38b090d4978e3e4fd581eb95851e4e2e078133692cfbdfc.wfQXK7QmQcgDYPrLUvjt3XhSlYaPgBFK3G4f_P0w5-Q
     products-workflows-customerioimportmodal--step-1-completed-but-key-deleted--light:
-        hash: v1.k794b7964.5f27cb42fc45fe4f9942e34b4bfec9abd4274622e927f0c9925290a930aea599.BUqXiS6eRYLH4dPGIXW5KEP1EUhvtNVfUqmUqnhITnc
+        hash: v1.k794b7964.3e5a663d8a2f7edbe5e0933224dc55495de342cb405fff6529f157bc5c8c4b44.WZjmpLtk-M4IyStYb1l7EHRS9joIaUSB-UtpaOsuAfA
+    products-workflows-customerioimportmodal--step-3-webhook-disabled--dark:
+        hash: v1.k794b7964.1004cd76cec27d3cfcad54626e213917d9983ca5c1ce18698238c45ce162d607.Bm61lTIYJ4WXkX2CMUCnI6i4KoTgB7HJH5EWUBzQYag
+    products-workflows-customerioimportmodal--step-3-webhook-disabled--light:
+        hash: v1.k794b7964.6fbc38ccfd62c2ad701dddb1505836863f492e8216f0a33806b12d9fab46bfd4.byQaEE9qPV1wJnKw-309YEdVSR7w4Di4J4GxVD7PaJc
+    products-workflows-customerioimportmodal--step-3-webhook-not-configured--dark:
+        hash: v1.k794b7964.01d95f3639985a545269ad726c98a0d8b83a889376d93f723c1559b85bd35022.YolkPc5WCg4UNzlt3KbpxObU9n3IKuLKjf_jvSbvf0s
+    products-workflows-customerioimportmodal--step-3-webhook-not-configured--light:
+        hash: v1.k794b7964.da3363082eab54e837e37632b95118d7bf0bfce834683ae6afe292dc5a30fd3c.Y-bwd908GyyxhJG6PDfap_31zlBR06HrZvKgsu-C8dM
     queries-webvitals--web-vitals--dark:
         hash: v1.k794b7964.3dafd5bc502ee6031605a593268702506114712a79bb67dc60a2887ba0410647.a77RXLksDGGzNOn3bpI1117NdOPrICX-qm1PTpzleEs
     queries-webvitals--web-vitals--light:
