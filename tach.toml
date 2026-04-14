@@ -1,7 +1,7 @@
 interfaces = []
 layers = [
-    "non_isolated",
     "products",
+    "non_isolated",
 ]
 exclude = [
     ".*__pycache__",
@@ -206,7 +206,7 @@ depends_on = [
     "ee",
     "posthog",
 ]
-layer = "products"
+layer = "non_isolated"
 interfaces = [
     # Business facade.
     "products.error_tracking.backend.facade",
@@ -230,7 +230,7 @@ path = "products.event_definitions"
 depends_on = [
     "posthog",
 ]
-layer = "products"
+layer = "non_isolated"
 
 [[modules]]
 path = "products.experiments"
@@ -304,6 +304,10 @@ depends_on = [
     "posthog",
 ]
 layer = "non_isolated"
+interfaces = [
+    "products.mcp_store.backend.facade",
+    "products.mcp_store.backend.presentation.views",
+]
 
 [[modules]]
 path = "products.marketing_analytics"
@@ -413,6 +417,7 @@ depends_on = [
     "products.error_tracking",
     "products.event_definitions",
     "products.llm_analytics",
+    "products.mcp_store",
     "products.signals",
     "products.slack_app",
 ]
