@@ -62,7 +62,7 @@ class TestEvaluationReportModel(BaseTest):
             start_date=now - dt.timedelta(hours=2),
             delivery_targets=[{"type": "email", "value": "test@example.com"}],
         )
-        self.assertIsNotNone(report.next_delivery_date)
+        assert report.next_delivery_date is not None
         self.assertGreater(report.next_delivery_date, now)
 
     def test_hourly_rrule(self):
@@ -121,6 +121,7 @@ class TestEvaluationReportModel(BaseTest):
             delivery_targets=[],
         )
         report.set_next_delivery_date()
+        assert report.next_delivery_date is not None
         self.assertGreater(report.next_delivery_date, now + dt.timedelta(minutes=14))
 
     def test_set_next_delivery_date_from_custom_dt(self):
@@ -135,6 +136,7 @@ class TestEvaluationReportModel(BaseTest):
             delivery_targets=[],
         )
         report.set_next_delivery_date(from_dt=from_dt)
+        assert report.next_delivery_date is not None
         self.assertGreater(report.next_delivery_date, from_dt)
 
 

@@ -72,6 +72,7 @@ class TestEvaluationReportApi(APIBaseTest):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(EvaluationReport.objects.count(), 1)
         report = EvaluationReport.objects.first()
+        assert report is not None
         self.assertEqual(report.team_id, self.team.id)
         self.assertEqual(report.created_by_id, self.user.id)
 

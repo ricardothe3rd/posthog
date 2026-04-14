@@ -191,7 +191,7 @@ class EvaluationReportViewSet(TeamAndOrgViewSetMixin, viewsets.ModelViewSet):
             from posthog.temporal.llm_analytics.eval_reports.types import GenerateAndDeliverEvalReportWorkflowInput
 
             client = sync_connect()
-            async_to_sync(client.start_workflow)(
+            async_to_sync(client.start_workflow)(  # type: ignore[misc]
                 GENERATE_EVAL_REPORT_WORKFLOW_NAME,
                 GenerateAndDeliverEvalReportWorkflowInput(report_id=str(report.id), manual=True),
                 id=f"eval-report-manual-{report.id}-{dt.datetime.now(tz=dt.UTC).timestamp():.0f}",
