@@ -29,6 +29,7 @@ import type {
     LLMProviderKeyApi,
     LlmAnalyticsClusteringJobsListParams,
     LlmAnalyticsEvaluationReportsListParams,
+    LlmAnalyticsEvaluationReportsRunsListParams,
     LlmAnalyticsProviderKeysListParams,
     LlmAnalyticsReviewQueueItemsListParams,
     LlmAnalyticsReviewQueuesListParams,
@@ -42,6 +43,7 @@ import type {
     PaginatedDatasetListApi,
     PaginatedEvaluationListApi,
     PaginatedEvaluationReportListApi,
+    PaginatedEvaluationReportRunListApi,
     PaginatedLLMPromptListListApi,
     PaginatedLLMProviderKeyListApi,
     PaginatedReviewQueueItemListApi,
@@ -541,19 +543,39 @@ export const llmAnalyticsEvaluationReportsGenerateCreate = async (
 /**
  * List report runs (history) for this report.
  */
-export const getLlmAnalyticsEvaluationReportsRunsRetrieveUrl = (projectId: string, id: string) => {
-    return `/api/environments/${projectId}/llm_analytics/evaluation_reports/${id}/runs/`
-}
-
-export const llmAnalyticsEvaluationReportsRunsRetrieve = async (
+export const getLlmAnalyticsEvaluationReportsRunsListUrl = (
     projectId: string,
     id: string,
-    options?: RequestInit
-): Promise<EvaluationReportApi> => {
-    return apiMutator<EvaluationReportApi>(getLlmAnalyticsEvaluationReportsRunsRetrieveUrl(projectId, id), {
-        ...options,
-        method: 'GET',
+    params?: LlmAnalyticsEvaluationReportsRunsListParams
+) => {
+    const normalizedParams = new URLSearchParams()
+
+    Object.entries(params || {}).forEach(([key, value]) => {
+        if (value !== undefined) {
+            normalizedParams.append(key, value === null ? 'null' : value.toString())
+        }
     })
+
+    const stringifiedParams = normalizedParams.toString()
+
+    return stringifiedParams.length > 0
+        ? `/api/environments/${projectId}/llm_analytics/evaluation_reports/${id}/runs/?${stringifiedParams}`
+        : `/api/environments/${projectId}/llm_analytics/evaluation_reports/${id}/runs/`
+}
+
+export const llmAnalyticsEvaluationReportsRunsList = async (
+    projectId: string,
+    id: string,
+    params?: LlmAnalyticsEvaluationReportsRunsListParams,
+    options?: RequestInit
+): Promise<PaginatedEvaluationReportRunListApi> => {
+    return apiMutator<PaginatedEvaluationReportRunListApi>(
+        getLlmAnalyticsEvaluationReportsRunsListUrl(projectId, id, params),
+        {
+            ...options,
+            method: 'GET',
+        }
+    )
 }
 
 /**

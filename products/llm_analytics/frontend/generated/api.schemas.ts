@@ -454,6 +454,42 @@ export interface PatchedEvaluationReportApi {
 }
 
 /**
+ * * `pending` - Pending
+ * `delivered` - Delivered
+ * `partial_failure` - Partial Failure
+ * `failed` - Failed
+ */
+export type DeliveryStatusEnumApi = (typeof DeliveryStatusEnumApi)[keyof typeof DeliveryStatusEnumApi]
+
+export const DeliveryStatusEnumApi = {
+    Pending: 'pending',
+    Delivered: 'delivered',
+    PartialFailure: 'partial_failure',
+    Failed: 'failed',
+} as const
+
+export interface EvaluationReportRunApi {
+    readonly id: string
+    readonly report: string
+    readonly content: unknown
+    readonly metadata: unknown
+    readonly period_start: string
+    readonly period_end: string
+    readonly delivery_status: DeliveryStatusEnumApi
+    readonly delivery_errors: unknown
+    readonly created_at: string
+}
+
+export interface PaginatedEvaluationReportRunListApi {
+    count: number
+    /** @nullable */
+    next?: string | null
+    /** @nullable */
+    previous?: string | null
+    results: EvaluationReportRunApi[]
+}
+
+/**
  * * `all` - all
  * `pass` - pass
  * `fail` - fail
@@ -1416,6 +1452,17 @@ export type LlmAnalyticsClusteringJobsListParams = {
 }
 
 export type LlmAnalyticsEvaluationReportsListParams = {
+    /**
+     * Number of results to return per page.
+     */
+    limit?: number
+    /**
+     * The initial index from which to return the results.
+     */
+    offset?: number
+}
+
+export type LlmAnalyticsEvaluationReportsRunsListParams = {
     /**
      * Number of results to return per page.
      */
