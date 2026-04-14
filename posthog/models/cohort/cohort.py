@@ -59,6 +59,10 @@ REALTIME_COHORT_MAX_PERSON_COUNT = 20_000_000
 
 logger = structlog.get_logger(__name__)
 
+DELETE_QUERY = """
+DELETE FROM "posthog_cohortpeople" WHERE "cohort_id" = {cohort_id}
+"""
+
 DEFAULT_COHORT_INSERT_BATCH_SIZE = 1000
 
 
@@ -690,19 +694,24 @@ class Cohort(FileSystemSyncMixin, RootTeamMixin, models.Model):
             persons_connection = connections[db_write]
             cursor = persons_connection.cursor()
             cohort_people_table = CohortPeople._meta.db_table
-
             for batch_index, batch in batch_iterator:
                 current_batch_index = batch_index
 
                 persons_query = Person.objects.db_manager(db_read).filter(team_id=team_id).filter(uuid__in=batch)
                 if insert_in_clickhouse:
-                    # Exclude existing cohort members via a subquery on
-                    # CohortPeople so we don't insert duplicates into the
-                    # ReplacingMergeTree (duplicates persist until async merge).
-                    insert_uuids_query = persons_query.exclude(
-                        id__in=CohortPeople.objects.using(db_write)
-                        .filter(cohort_id=self.id)
-                        .values_list("person_id", flat=True)
+                    # Both querysets must use db_write so Django can merge the
+                    # .exclude() into a single NOT IN subquery. Using db_read
+                    # for Person + db_write for CohortPeople causes a
+                    # "Subqueries aren't allowed across different databases"
+                    # ValueError when the aliases differ (production config).
+                    insert_uuids_query = (
+                        Person.objects.using(db_write)
+                        .filter(team_id=team_id, uuid__in=batch)
+                        .exclude(
+                            id__in=CohortPeople.objects.using(db_write)
+                            .filter(cohort_id=self.id)
+                            .values_list("person_id", flat=True)
+                        )
                     )
                     insert_static_cohort(
                         list(insert_uuids_query.values_list("uuid", flat=True)),
@@ -710,9 +719,10 @@ class Cohort(FileSystemSyncMixin, RootTeamMixin, models.Model):
                         team_id=team_id,
                     )
 
-                # Exclude existing members via a LEFT JOIN so the exclusion
-                # stays entirely within the database. Both tables are on
-                # the same persons DB so this join works.
+                # Dedup via LEFT JOIN so the exclusion stays entirely in SQL,
+                # avoiding the O(cohort_size) memory cost of loading all
+                # existing member IDs into Python. Both tables live on the
+                # persons DB so the join works on the db_write cursor.
                 sql, params = persons_query.distinct("pk").only("pk").query.sql_with_params()
                 query = f"""
                     INSERT INTO "{cohort_people_table}" ("person_id", "cohort_id", "version")
@@ -721,6 +731,7 @@ class Cohort(FileSystemSyncMixin, RootTeamMixin, models.Model):
                     LEFT JOIN "{cohort_people_table}" AS cp
                         ON cp."person_id" = p."id" AND cp."cohort_id" = {self.pk}
                     WHERE cp."person_id" IS NULL
+                    ON CONFLICT DO NOTHING
                 """
                 cursor.execute(query, params)
 
