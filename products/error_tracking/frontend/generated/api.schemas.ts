@@ -633,6 +633,8 @@ export interface ErrorTrackingGroupingRuleApi {
     filters: unknown
     /** @nullable */
     readonly assignee: ErrorTrackingGroupingRuleApiAssignee
+    /** @nullable */
+    description?: string | null
     /**
      * Issue linked to this rule
      * @nullable
@@ -648,12 +650,7 @@ export interface ErrorTrackingGroupingRuleApi {
     readonly updated_at: string
 }
 
-export interface PaginatedErrorTrackingGroupingRuleListApi {
-    count: number
-    /** @nullable */
-    next?: string | null
-    /** @nullable */
-    previous?: string | null
+export interface ErrorTrackingGroupingRuleListResponseApi {
     results: ErrorTrackingGroupingRuleApi[]
 }
 
@@ -676,6 +673,8 @@ export interface PatchedErrorTrackingGroupingRuleApi {
     filters?: unknown
     /** @nullable */
     readonly assignee?: PatchedErrorTrackingGroupingRuleApiAssignee
+    /** @nullable */
+    description?: string | null
     /**
      * Issue linked to this rule
      * @nullable
@@ -990,17 +989,6 @@ export type ErrorTrackingExternalReferencesListParams = {
 }
 
 export type ErrorTrackingFingerprintsListParams = {
-    /**
-     * Number of results to return per page.
-     */
-    limit?: number
-    /**
-     * The initial index from which to return the results.
-     */
-    offset?: number
-}
-
-export type ErrorTrackingGroupingRulesListParams = {
     /**
      * Number of results to return per page.
      */
