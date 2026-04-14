@@ -310,13 +310,15 @@ export class SessionBatchRecorder {
                     } = await sessionBlockRecorder.end()
 
                     const features = featureRecorder.end()
-                    featureBlocks.push({
-                        sessionId: sessionBlockRecorder.sessionId,
-                        teamId: sessionBlockRecorder.teamId,
-                        distinctId: sessionBlockRecorder.distinctId,
-                        batchId,
-                        features,
-                    })
+                    if (features) {
+                        featureBlocks.push({
+                            sessionId: sessionBlockRecorder.sessionId,
+                            teamId: sessionBlockRecorder.teamId,
+                            distinctId: sessionBlockRecorder.distinctId,
+                            batchId,
+                            features,
+                        })
+                    }
 
                     const { consoleLogCount, consoleWarnCount, consoleErrorCount } = consoleLogRecorder.end()
 

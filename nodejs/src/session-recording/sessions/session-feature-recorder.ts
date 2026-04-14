@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { DateTime } from 'luxon'
 
 import { ParsedMessageData, SnapshotEvent } from '../kafka/types'
@@ -146,11 +147,13 @@ export interface FeatureEndResult {
  * Extracts aggregate features from session recording events for ML scoring.
  */
 export class SessionFeatureRecorder {
-    private eventCount: number = 0
     private ended = false
-    private startDateTime: DateTime | null = null
-    private endDateTime: DateTime | null = null
     private _distinctId: string | null = null
+    private _run: boolean = false
+
+    private eventCount: number = 0
+    private endDateTime: DateTime | null = null
+    private startDateTime: DateTime | null = null
     private clickCount: number = 0
     private keypressCount: number = 0
     private mouseActivityCount: number = 0
@@ -230,9 +233,15 @@ export class SessionFeatureRecorder {
         public readonly sessionId: string,
         public readonly teamId: number,
         public readonly batchId: string
-    ) {}
+    ) {
+        this._run = this.shouldRun(sessionId)
+    }
 
     public recordMessage(message: ParsedMessageData): void {
+        if (!this._run) {
+            return
+        }
+
         if (this.ended) {
             throw new Error('Cannot record message after end() has been called')
         }
@@ -254,6 +263,21 @@ export class SessionFeatureRecorder {
                 this.eventCount++
             }
         }
+    }
+
+    /** Ad-hoc rollout md5 gate */
+    private shouldRun(sessionId: string): boolean {
+        const rolloutPercentage = Number(process.env.SESSION_RECORDING_FEATURES_ROLLOUT_PERCENTAGE ?? '10')
+        if (rolloutPercentage >= 100) {
+            return true
+        }
+        if (rolloutPercentage <= 0) {
+            return false
+        }
+        const hash = crypto.createHash('md5').update(sessionId).digest('hex')
+        const hashValue = parseInt(hash.substring(0, 8), 16)
+        const percentage = (hashValue % 10000) / 100
+        return percentage < rolloutPercentage
     }
 
     private aggregateFeatures(event: SnapshotEvent): void {
@@ -547,7 +571,11 @@ export class SessionFeatureRecorder {
         return this._distinctId
     }
 
-    public end(): FeatureEndResult {
+    public end(): FeatureEndResult | null {
+        if (!this._run) {
+            return null
+        }
+
         if (this.ended) {
             throw new Error('end() has already been called')
         }
