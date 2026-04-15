@@ -1,6 +1,6 @@
 # Desired-state schema for the person_overrides ecosystem.
 # NOTE: These tables are retained for migration consistency but are not actively used.
-# See person_distinct_id_overrides in person.yaml for the replacement.
+# See person_distinct_id_overrides in person_distinct_id_overrides.yaml for the replacement.
 
 ecosystem: person_overrides
 cluster: main
