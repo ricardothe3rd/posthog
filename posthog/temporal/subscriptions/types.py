@@ -92,6 +92,26 @@ class TrackedSubscriptionInputs:
 
 
 @dataclasses.dataclass
+class SnapshotInsightsInputs:
+    subscription_id: int
+    team_id: int
+
+
+@dataclasses.dataclass
+class InsightSnapshotState:
+    insight_id: int
+    insight_name: str
+    query_definition: dict[str, typing.Any]
+    results_summary: str
+    timestamp: str
+
+
+@dataclasses.dataclass
+class SnapshotInsightsResult:
+    previous_states: list[InsightSnapshotState] | None = None
+
+
+@dataclasses.dataclass
 class ScheduleAllSubscriptionsWorkflowInputs:
     buffer_minutes: int = 15
 
