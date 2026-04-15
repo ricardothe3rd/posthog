@@ -560,7 +560,7 @@ function buildResponseFilter(config: ToolConfig): {
 // ------------------------------------------------------------------
 
 function buildEnrichment(config: ToolConfig, category: CategoryConfig, resultVar = 'result'): string {
-    const baseUrl = category.url_prefix
+    const baseUrl = config.url_prefix ?? category.url_prefix
 
     if (config.list && config.enrich_url) {
         const { prefix, field } = parseEnrichUrl(config.enrich_url)
