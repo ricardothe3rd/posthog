@@ -29,11 +29,11 @@ operations = [
     # events_json (DATA, matching existing MSK table)
     run_sql_with_exceptions(
         KAFKA_EVENTS_TABLE_JSON_WS_SQL(),
-        node_roles=[NodeRole.DATA],
+        node_roles=[NodeRole.INGESTION_EVENTS],
     ),
     run_sql_with_exceptions(
         EVENTS_TABLE_JSON_WS_MV_SQL(),
-        node_roles=[NodeRole.DATA],
+        node_roles=[NodeRole.INGESTION_EVENTS],
     ),
     # groups (INGESTION_SMALL, matching existing MSK table)
     run_sql_with_exceptions(
