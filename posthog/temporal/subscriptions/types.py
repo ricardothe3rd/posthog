@@ -109,6 +109,7 @@ class InsightSnapshotState:
 @dataclasses.dataclass
 class SnapshotInsightsResult:
     previous_states: list[InsightSnapshotState] | None = None
+    summary_text: str | None = None
 
 
 @dataclasses.dataclass

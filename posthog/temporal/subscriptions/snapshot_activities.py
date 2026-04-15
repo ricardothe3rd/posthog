@@ -14,6 +14,7 @@ from posthog.temporal.subscriptions.change_summary_state import (
     load_insight_state,
     store_insight_state,
 )
+from posthog.temporal.subscriptions.llm_change_summary import generate_change_summary
 from posthog.temporal.subscriptions.results_summarizer import build_results_summary
 from posthog.temporal.subscriptions.types import InsightSnapshotState, SnapshotInsightsInputs, SnapshotInsightsResult
 
@@ -85,6 +86,7 @@ async def snapshot_subscription_insights(inputs: SnapshotInsightsInputs) -> Snap
     now = dt.datetime.now(dt.UTC).isoformat()
 
     previous_states: list[InsightSnapshotState] = []
+    current_state_dicts: list[dict] = []
     has_any_previous = False
 
     for insight in insights:
@@ -118,21 +120,60 @@ async def snapshot_subscription_insights(inputs: SnapshotInsightsInputs) -> Snap
             )
             results_summary = "Query execution failed"
 
+        insight_name = insight.name or insight.derived_name or f"Insight {insight.id}"
         current_state = {
             "query_definition": insight.query or {},
             "results_summary": results_summary,
             "timestamp": now,
-            "insight_name": insight.name or insight.derived_name or f"Insight {insight.id}",
+            "insight_name": insight_name,
         }
         await store_insight_state(redis_client, key, current_state, ttl)
+
+        current_state_dicts.append(
+            {
+                "insight_id": insight.id,
+                "insight_name": insight_name,
+                "query_definition": insight.query or {},
+                "results_summary": results_summary,
+                "timestamp": now,
+            }
+        )
+
+    summary_text: str | None = None
+    if has_any_previous and previous_states:
+        try:
+            previous_dicts = [
+                {
+                    "insight_id": s.insight_id,
+                    "insight_name": s.insight_name,
+                    "query_definition": s.query_definition,
+                    "results_summary": s.results_summary,
+                    "timestamp": s.timestamp,
+                }
+                for s in previous_states
+            ]
+            summary_text = await database_sync_to_async(generate_change_summary, thread_sensitive=False)(
+                previous_dicts,
+                current_state_dicts,
+                subscription_title=subscription.title,
+                team_id=inputs.team_id,
+            )
+        except Exception:
+            await LOGGER.awarning(
+                "snapshot_subscription_insights.llm_summary_failed",
+                subscription_id=inputs.subscription_id,
+                exc_info=True,
+            )
 
     await LOGGER.ainfo(
         "snapshot_subscription_insights.completed",
         subscription_id=inputs.subscription_id,
         insight_count=len(insights),
         has_previous=has_any_previous,
+        has_summary=summary_text is not None,
     )
 
     return SnapshotInsightsResult(
         previous_states=previous_states if has_any_previous else None,
+        summary_text=summary_text,
     )
