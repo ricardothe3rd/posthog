@@ -91,6 +91,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "integration_id",
             "invite_message",
             "summary_enabled",
+            "summary_prompt_guide",
         ]
         read_only_fields = [
             "id",
@@ -146,6 +147,10 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             allowed, error = is_url_allowed(target_value)
             if not allowed:
                 raise ValidationError({"target_value": [f"Invalid webhook URL: {error}"]})
+
+        prompt_guide = attrs.get("summary_prompt_guide")
+        if prompt_guide and len(prompt_guide) > 500:
+            raise ValidationError({"summary_prompt_guide": ["Prompt guide must be 500 characters or fewer."]})
 
         return attrs
 

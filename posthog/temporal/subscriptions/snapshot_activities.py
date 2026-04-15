@@ -163,6 +163,7 @@ async def snapshot_subscription_insights(inputs: SnapshotInsightsInputs) -> Snap
                 previous_dicts,
                 current_state_dicts,
                 subscription_title=subscription.title,
+                prompt_guide=getattr(subscription, "summary_prompt_guide", "") or "",
                 team_id=inputs.team_id,
             )
         except Exception:
