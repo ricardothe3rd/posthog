@@ -139,9 +139,14 @@ describe('config', () => {
                 const config = buildCaptureConfig(baseInput({ output_format: 'gif' }))
                 expect(config.outputFormat).toBe('gif')
                 expect(config.ffmpegOutputOpts).toContain('-f gif')
+                expect(config.ffmpegOutputOpts).toContain('-c:v gif')
+                expect(config.ffmpegOutputOpts).toContain('-loop')
+                expect(config.ffmpegOutputOpts).toContain('0')
                 expect(config.ffmpegOutputOpts).not.toContain('-movflags +faststart')
-                expect(config.ffmpegVideoFilters).toContain('scale=640:-1:flags=lanczos')
-                expect(config.ffmpegVideoFilters).toContain('split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse')
+                expect(config.ffmpegVideoFilters).toContain('fps=12')
+                expect(config.ffmpegVideoFilters).toContain(
+                    'split[s0][s1];[s0]palettegen=stats_mode=single[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle'
+                )
             })
 
             it.each([
