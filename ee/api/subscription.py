@@ -90,6 +90,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "next_delivery_date",
             "integration_id",
             "invite_message",
+            "summary_enabled",
         ]
         read_only_fields = [
             "id",

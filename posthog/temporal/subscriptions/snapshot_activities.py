@@ -50,6 +50,13 @@ async def snapshot_subscription_insights(inputs: SnapshotInsightsInputs) -> Snap
         thread_sensitive=False,
     )(pk=inputs.subscription_id)
 
+    if not getattr(subscription, "summary_enabled", False):
+        await LOGGER.ainfo(
+            "snapshot_subscription_insights.summary_disabled",
+            subscription_id=inputs.subscription_id,
+        )
+        return SnapshotInsightsResult()
+
     team = subscription.team
     dashboard = subscription.dashboard
 

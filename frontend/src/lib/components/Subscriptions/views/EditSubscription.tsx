@@ -18,6 +18,7 @@ import { LemonLabel } from 'lib/lemon-ui/LemonLabel/LemonLabel'
 import { LemonModal } from 'lib/lemon-ui/LemonModal'
 import { LemonSelect } from 'lib/lemon-ui/LemonSelect'
 import { LemonSkeleton } from 'lib/lemon-ui/LemonSkeleton'
+import { LemonSwitch } from 'lib/lemon-ui/LemonSwitch'
 import { membersLogic } from 'scenes/organization/membersLogic'
 import { preflightLogic } from 'scenes/PreflightCheck/preflightLogic'
 
@@ -421,6 +422,18 @@ export function EditSubscription({
                                 </div>
                             )}
                         </div>
+
+                        <LemonField name="summary_enabled">
+                            {({ value, onChange }) => (
+                                <LemonSwitch
+                                    checked={value}
+                                    onChange={onChange}
+                                    bordered
+                                    label="AI change summary"
+                                    fullWidth
+                                />
+                            )}
+                        </LemonField>
 
                         {insightShortId && (
                             <div>
